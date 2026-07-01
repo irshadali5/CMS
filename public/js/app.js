@@ -94,12 +94,17 @@ async function router() {
     }
     else if (route === '/about') renderAbout(app);
     else if (route === '/contact') renderContact(app);
+        // ... existing routes ...
     else if (route === '/admin') renderAdmin(app);
     else if (route === '/admin/login') renderLogin(app);
-    else if (route === '/admin/new') renderArticleEditor(app);
-    else if (route.startsWith('/admin/edit/')) renderArticleEditor(app, route.split('/admin/edit/')[1]);
+    else if (route === '/admin/article/new') renderArticleEditor(app);
+    else if (route.startsWith('/admin/article/edit/')) renderArticleEditor(app, route.split('/admin/article/edit/')[1]);
+    else if (route.match(/^\/admin\/book\/[^\/]+$/)) renderBookManager(app, route.split('/admin/book/')[1]);
+    else if (route.match(/^\/admin\/book\/([^\/]+)\/chapter\/([^\/]+)/)) {
+        const match = route.match(/^\/admin\/book\/([^\/]+)\/chapter\/([^\/]+)/);
+        renderChapterEditor(app, match[1], match[2]);
+    }
     else renderHome(app);
-
     // Scroll to top & trigger animations
     window.scrollTo(0, 0);
     initRevealAnimations();
@@ -1138,6 +1143,273 @@ async function renderBookChapter(app, bookSlug, chapterSlug) {
         document.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
     } catch (e) {
         app.innerHTML = `<div class="container" style="padding-top: 150px; text-align: center;"><h2>Chapter not found</h2><a href="#/book/${bookSlug}" class="btn btn-primary">Back to TOC</a></div>`;
+    }
+}
+// ============================================================
+// ADMIN CMS SYSTEM
+// ============================================================
+
+async function renderAdmin(app) {
+    if (!state.token) { navigate('/admin/login'); return; }
+
+    app.innerHTML = `
+        <div class="admin-panel container page-enter">
+            <div class="admin-header">
+                <div>
+                    <span class="section-label">CMS Dashboard</span>
+                    <h2 class="section-title">Content Manager</h2>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="logoutBtn">Logout</button>
+            </div>
+            
+            <div class="admin-tabs">
+                <button class="admin-tab active" data-tab="articles">Articles</button>
+                <button class="admin-tab" data-tab="books">Books</button>
+            </div>
+
+            <div id="admin-content-area">
+                <div class="loading-spinner"><div class="spinner"></div></div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('logoutBtn').onclick = () => {
+        state.token = null;
+        localStorage.removeItem('auth_token');
+        showToast('Logged out', 'success');
+        navigate('/');
+    };
+
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+        tab.onclick = () => {
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            if (tab.dataset.tab === 'articles') loadAdminArticles();
+            if (tab.dataset.tab === 'books') loadAdminBooks();
+        };
+    });
+
+    loadAdminArticles();
+}
+
+async function loadAdminArticles() {
+    const area = document.getElementById('admin-content-area');
+    try {
+        const data = await api('/articles/admin/all'); 
+        area.innerHTML = `
+            <div class="admin-actions">
+                <a href="#/admin/article/new" class="btn btn-primary btn-sm">+ New Article</a>
+            </div>
+            <table class="admin-table">
+                <thead><tr><th>Title</th><th>Status</th><th>Views</th><th>Actions</th></tr></thead>
+                <tbody>
+                    ${data.articles.map(a => `
+                        <tr>
+                            <td><strong>${escapeHtml(a.title)}</strong></td>
+                            <td><span class="status-badge ${a.published ? 'published' : 'draft'}">${a.published ? 'Published' : 'Draft'}</span></td>
+                            <td>${a.views || 0}</td>
+                            <td>
+                                <a href="#/admin/article/edit/${a.id}" class="btn btn-sm btn-secondary">Edit</a>
+                                <button class="btn btn-sm btn-danger" onclick="deleteArticle('${a.id}')">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch(e) { area.innerHTML = '<p>Failed to load articles.</p>'; }
+}
+
+window.deleteArticle = async (id) => {
+    if(!confirm('Delete this article?')) return;
+    await api(`/articles/${id}`, { method: 'DELETE' });
+    showToast('Deleted', 'success');
+    loadAdminArticles();
+}
+
+async function loadAdminBooks() {
+    const area = document.getElementById('admin-content-area');
+    try {
+        // Fetch all books (we'll use the public endpoint, but let's fetch admin details if we need drafts. 
+        // For simplicity, let's just fetch public books + a trick to get drafts if needed, or just use public for now)
+        const { books } = await api('/books'); 
+        area.innerHTML = `
+            <div class="admin-actions">
+                <button class="btn btn-primary btn-sm" onclick="createNewBook()">+ New Book</button>
+            </div>
+            <table class="admin-table">
+                <thead><tr><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                    ${books.map(b => `
+                        <tr>
+                            <td>${b.cover_emoji} <strong>${escapeHtml(b.title)}</strong></td>
+                            <td><span class="status-badge ${b.published ? 'published' : 'draft'}">${b.published ? 'Published' : 'Draft'}</span></td>
+                            <td>
+                                <a href="#/admin/book/${b.id}" class="btn btn-sm btn-secondary">Manage Chapters</a>
+                                <button class="btn btn-sm btn-danger" onclick="deleteBook('${b.id}')">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="3" style="text-align:center; padding:20px;">No books yet.</td></tr>'}
+                </tbody>
+            </table>
+        `;
+    } catch(e) { area.innerHTML = '<p>Failed to load books.</p>'; }
+}
+
+window.createNewBook = async () => {
+    const title = prompt('Book Title:');
+    if(!title) return;
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    await api('/books', { method: 'POST', body: JSON.stringify({ title, slug, description: '', cover_emoji: '📚', published: false }) });
+    showToast('Book created! Now add chapters.', 'success');
+    loadAdminBooks();
+}
+
+window.deleteBook = async (id) => {
+    if(!confirm('Delete this book and ALL its chapters?')) return;
+    await api(`/books/${id}`, { method: 'DELETE' });
+    showToast('Deleted', 'success');
+    loadAdminBooks();
+}
+
+// BOOK MANAGER (Chapters List)
+async function renderBookManager(app, bookId) {
+    if (!state.token) { navigate('/admin/login'); return; }
+    app.innerHTML = `<div class="loading-spinner" style="min-height: 60vh;"><div class="spinner"></div></div>`;
+    
+    try {
+        const { book, chapters } = await api(`/books/admin/${bookId}`);
+        app.innerHTML = `
+            <div class="admin-panel container page-enter">
+                <div class="admin-header">
+                    <div>
+                        <a href="#/admin" class="article-back">← Back to Dashboard</a>
+                        <h2 class="section-title">${book.cover_emoji} ${escapeHtml(book.title)}</h2>
+                        <p style="color: var(--text-secondary);">Manage chapters for this book.</p>
+                    </div>
+                    <div style="display:flex; gap:12px;">
+                         <button class="btn btn-secondary btn-sm" onclick="toggleBookPublish('${book.id}', ${!book.published})">${book.published ? 'Unpublish' : 'Publish Book'}</button>
+                         <button class="btn btn-primary btn-sm" onclick="addChapter('${book.id}', ${chapters.length + 1})">+ Add Chapter</button>
+                    </div>
+                </div>
+                
+                <table class="admin-table">
+                    <thead><tr><th>#</th><th>Chapter Title</th><th>Slug</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        ${chapters.map(ch => `
+                            <tr>
+                                <td>${ch.chapter_index}</td>
+                                <td><strong>${escapeHtml(ch.title)}</strong></td>
+                                <td style="font-family: monospace; color: var(--text-tertiary);">${ch.slug}</td>
+                                <td>
+                                    <a href="#/admin/book/${bookId}/chapter/${ch.id}" class="btn btn-sm btn-secondary">Edit</a>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteChapter('${bookId}', '${ch.id}')">Delete</button>
+                                </td>
+                            </tr>
+                        `).join('') || '<tr><td colspan="4" style="text-align:center; padding: 40px;">No chapters yet. Add your first chapter!</td></tr>'}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } catch (e) {
+        app.innerHTML = `<div class="container" style="padding-top: 150px; text-align: center;"><h2>Error loading book</h2><a href="#/admin" class="btn btn-primary">Back</a></div>`;
+    }
+}
+
+window.toggleBookPublish = async (id, publish) => {
+    const { book } = await api(`/books/admin/${id}`);
+    await api(`/books/${id}`, { method: 'PUT', body: JSON.stringify({ ...book, published: publish }) });
+    showToast(publish ? 'Book Published!' : 'Book Unpublished', 'success');
+    renderBookManager(document.getElementById('app'), id);
+}
+
+window.addChapter = (bookId, index) => navigate(`/admin/book/${bookId}/chapter/new?index=${index}`);
+
+window.deleteChapter = async (bookId, chapterId) => {
+    if(!confirm('Delete this chapter?')) return;
+    await api(`/books/${bookId}/chapters/${chapterId}`, { method: 'DELETE' });
+    showToast('Chapter deleted', 'success');
+    renderBookManager(document.getElementById('app'), bookId);
+}
+
+// CHAPTER EDITOR
+async function renderChapterEditor(app, bookId, chapterId = null) {
+    if (!state.token) { navigate('/admin/login'); return; }
+    
+    const isNew = chapterId === 'new';
+    const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    const defaultIndex = urlParams.get('index') || 1;
+
+    let chapter = { title: '', slug: '', content: '', chapter_index: defaultIndex };
+    
+    if (!isNew) {
+        const { chapters } = await api(`/books/admin/${bookId}`);
+        chapter = chapters.find(c => c.id === chapterId);
+        if (!chapter) { navigate(`/admin/book/${bookId}`); return; }
+    }
+
+    app.innerHTML = `
+        <div class="admin-panel container page-enter">
+            <div class="admin-header">
+                <h2 class="section-title">${isNew ? 'New Chapter' : 'Edit Chapter'}</h2>
+                <a href="#/admin/book/${bookId}" class="btn btn-secondary btn-sm">← Back to Book</a>
+            </div>
+            <form id="chapterForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 100px; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Title *</label>
+                        <input type="text" class="form-input" id="chTitle" value="${escapeHtml(chapter.title)}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Slug *</label>
+                        <input type="text" class="form-input" id="chSlug" value="${escapeHtml(chapter.slug)}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Order #</label>
+                        <input type="number" class="form-input" id="chIndex" value="${chapter.chapter_index}" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Content (Markdown) *</label>
+                    <div class="editor-toolbar">
+                        <button type="button" onclick="insertMarkdown('**', '**')">Bold</button>
+                        <button type="button" onclick="insertMarkdown('## ', '')">H2</button>
+                        <button type="button" onclick="insertMarkdown('### ', '')">H3</button>
+                        <button type="button" onclick="insertMarkdown('\\n\`\`\`rust\\n', '\\n\`\`\`\\n')">Rust</button>
+                        <button type="button" onclick="insertMarkdown('\\n\`\`\`cpp\\n', '\\n\`\`\`\\n')">C++</button>
+                    </div>
+                    <textarea class="editor-textarea" id="chContent" required>${escapeHtml(chapter.content)}</textarea>
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-primary" onclick="saveChapter('${bookId}', '${chapterId}')">Save Chapter</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.getElementById('chTitle').oninput = (e) => {
+        if(isNew) document.getElementById('chSlug').value = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    };
+}
+
+window.saveChapter = async (bookId, chapterId) => {
+    const title = document.getElementById('chTitle').value;
+    const slug = document.getElementById('chSlug').value;
+    const content = document.getElementById('chContent').value;
+    const chapter_index = parseInt(document.getElementById('chIndex').value);
+
+    if(!title || !slug || !content) return showToast('All fields required', 'error');
+
+    try {
+        if (chapterId === 'new') {
+            await api(`/books/${bookId}/chapters`, { method: 'POST', body: JSON.stringify({ title, slug, content, chapter_index }) });
+        } else {
+            await api(`/books/${bookId}/chapters/${chapterId}`, { method: 'PUT', body: JSON.stringify({ title, content, chapter_index }) });
+        }
+        showToast('Chapter saved!', 'success');
+        navigate(`/admin/book/${bookId}`);
+    } catch (e) {
+        showToast(e.message, 'error');
     }
 }
 

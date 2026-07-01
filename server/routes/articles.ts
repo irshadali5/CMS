@@ -146,4 +146,12 @@ app.delete("/:id", authMiddleware, (c) => {
   return c.json({ message: "Deleted" });
 });
 
+// GET all articles (Admin only - includes drafts)
+app.get("/admin/all", authMiddleware, (c) => {
+  const articles = db.query("SELECT * FROM articles ORDER BY created_at DESC").all().map((a: any) => ({
+    ...a, tags: JSON.parse(a.tags || "[]"), coverImage: a.cover_image, createdAt: a.created_at, updatedAt: a.updated_at
+  }));
+  return c.json({ articles });
+});
+
 export { app as articleRoutes };
