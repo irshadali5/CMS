@@ -801,3 +801,135 @@ code, pre { font-family: var(--font-mono); }
     .terminal-body { padding: 24px 16px; }
     .terminal-title { display: none; }
 }
+
+/* ============================================
+   BOOKS LIBRARY & READER
+   ============================================ */
+.books-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 32px;
+    margin-top: 48px;
+}
+
+.book-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    color: var(--text-primary);
+    text-decoration: none;
+}
+.book-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--accent);
+}
+
+.book-cover {
+    height: 220px;
+    background: var(--gradient-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 6rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.book-info { padding: 28px; flex: 1; display: flex; flex-direction: column; }
+.book-info h3 { font-size: 1.4rem; margin-bottom: 12px; font-weight: 700; }
+.book-info p { color: var(--text-secondary); flex: 1; line-height: 1.6; }
+
+/* TOC View */
+.book-toc-container { max-width: 800px; margin: 0 auto; }
+.book-header-hero { text-align: center; margin-bottom: 60px; }
+.book-emoji-large { font-size: 5rem; display: block; margin-bottom: 16px; }
+.toc-wrapper { 
+    background: var(--bg-card); 
+    border: 1px solid var(--border); 
+    border-radius: var(--radius-lg); 
+    padding: 40px; 
+}
+.toc-wrapper h3 { margin-bottom: 24px; font-size: 1.2rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px; }
+.toc-list { list-style: none; counter-reset: toc; }
+.toc-list li { border-bottom: 1px solid var(--border); }
+.toc-list li:last-child { border-bottom: none; }
+.toc-list a {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 8px;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+.toc-list a:hover { color: var(--accent); padding-left: 16px; }
+.toc-index { color: var(--accent); font-family: var(--font-mono); font-weight: 700; font-size: 1.2rem; }
+
+/* Book Reader Layout */
+.book-reader { padding-bottom: 80px; background: var(--bg-primary); min-height: 100vh; }
+.reader-top-bar {
+    position: sticky;
+    top: var(--nav-height);
+    z-index: 90;
+    background: rgba(10, 10, 15, 0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 0;
+}
+[data-theme="light"] .reader-top-bar { background: rgba(255,255,255,0.95); }
+.reader-top-inner { display: flex; justify-content: space-between; align-items: center; }
+.reader-book-title { color: var(--text-secondary); font-weight: 600; font-size: 0.9rem; }
+.reader-book-title:hover { color: var(--accent); }
+.reader-toc-link { 
+    font-size: 0.8rem; 
+    color: var(--accent); 
+    text-transform: uppercase; 
+    letter-spacing: 1px; 
+    font-weight: 600;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+}
+.reader-toc-link:hover { background: var(--accent-light); border-color: var(--accent); }
+
+.chapter-meta {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+/* Chapter Navigation (Prev / Next) */
+.chapter-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    margin-top: 80px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border);
+}
+.nav-btn-wrapper { flex: 1; max-width: 45%; }
+.nav-btn-wrapper.right { text-align: right; }
+
+.chapter-nav-btn {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    transition: all 0.3s;
+    background: var(--bg-card);
+    height: 100%;
+}
+.chapter-nav-btn:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.nav-dir { font-size: 0.8rem; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+.nav-title { font-size: 1.1rem; color: var(--text-primary); font-weight: 600; line-height: 1.4; }

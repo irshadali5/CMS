@@ -50,6 +50,37 @@ export function migrate() {
       created_at TEXT NOT NULL
     );
   `);
+  
+  // Add inside migrate() function, after CREATE TABLE admin_users
+db.exec(`
+  CREATE TABLE IF NOT EXISTS books (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    description TEXT,
+    cover_emoji TEXT DEFAULT '📚',
+    published INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS book_chapters (
+    id TEXT PRIMARY KEY,
+    book_id TEXT NOT NULL,
+    chapter_index INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    slug TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_book_chapter_slug ON book_chapters(book_id, slug);
+`);
+
+// At the bottom of migrate(), add the book seeder
+const bookCount = db.query("SELECT COUNT(*) as c FROM books").get() as any;
+if (bookCount.c === 0) seedSampleBooks();
 
   // Seed admin user if missing
   const bcrypt = require("bcryptjs");
@@ -141,4 +172,39 @@ function seedSampleArticles() {
     );
   }
   console.log(`✓ Seeded ${samples.length} sample articles`);
+}
+
+function seedSampleBooks() {
+  const bookId = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  db.query(`
+    INSERT INTO books (id, title, slug, description, cover_emoji, published, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(bookId, "Rust for Systems Programmers", "rust-systems", "A practical guide to migrating your C++ mental models to Rust. Learn ownership, concurrency, and zero-cost abstractions.", "🦀", 1, now, now);
+
+  const chapters = [
+    {
+      id: crypto.randomUUID(), idx: 1, title: "Introduction: Why Rust?", slug: "intro",
+      content: "## Welcome to Rust\n\nIf you are coming from C++, you already understand memory. Rust doesn't want to hide memory from you; it wants to help you manage it without the segfaults.\n\n### The C++ Baggage\n\nIn C++, you manually call `new` and `delete`. In Rust, the compiler calls them for you via RAII (Resource Acquisition Is Initialization), but with strict borrowing rules."
+    },
+    {
+      id: crypto.randomUUID(), idx: 2, title: "Ownership & Borrowing", slug: "ownership",
+      content: "## The Golden Rules\n\n1. Each value in Rust has a variable that’s called its *owner*.\n2. There can only be one owner at a time.\n3. When the owner goes out of scope, the value will be dropped.\n\n```rust\nlet s1 = String::from(\"hello\");\nlet s2 = s1; // s1 is moved, no longer valid\n```"
+    },
+    {
+      id: crypto.randomUUID(), idx: 3, title: "Lifetimes Demystified", slug: "lifetimes",
+      content: "## What is a Lifetime?\n\nLifetimes are simply a way to describe the scope for which a reference is valid. Most of the time, they are implicit.\n\n```rust\n&i32        // a reference\n&'a i32     // a reference with an explicit lifetime\n&'a mut i32 // a mutable reference with an explicit lifetime\n```"
+    }
+  ];
+
+  const insertChapter = db.query(`
+    INSERT INTO book_chapters (id, book_id, chapter_index, title, slug, content, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  for (const ch of chapters) {
+    insertChapter.run(ch.id, bookId, ch.idx, ch.title, ch.slug, ch.content, now, now);
+  }
+  console.log(`✓ Seeded sample book with ${chapters.length} chapters`);
 }

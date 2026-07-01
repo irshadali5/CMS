@@ -10,6 +10,7 @@ import { authRoutes } from "./routes/auth";
 import { articleRoutes } from "./routes/articles";
 import { contactRoutes } from "./routes/contact";
 import { seoRoutes } from "./routes/seo";
+import { bookRoutes } from "./routes/books";
 import { rateLimiter } from "./middleware/rateLimit";
 
 // --- Bootstrap ---
@@ -37,6 +38,7 @@ app.route("/api/auth", authRoutes);
 app.route("/api/articles", articleRoutes);
 app.route("/api/contact", contactRoutes);
 app.route("/", seoRoutes);
+app.route("/api/books", bookRoutes);
 
 // --- Static Files ---
 app.use("/manifest.json", serveStatic({ path: "./public/manifest.json" }));

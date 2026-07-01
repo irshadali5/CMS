@@ -71,6 +71,7 @@ async function router() {
             (r === 'home' && route === '/') ||
             (r === 'portfolio' && route === '/portfolio') ||
             (r === 'articles' && (route === '/articles' || route.startsWith('/article/'))) ||
+            (r === 'books' && route.startsWith('/book')) ||
             (r === 'about' && route === '/about') ||
             (r === 'contact' && route === '/contact')
         );
@@ -85,6 +86,12 @@ async function router() {
     else if (route === '/portfolio') renderPortfolio(app);
     else if (route === '/articles') renderArticles(app);
     else if (route.startsWith('/article/')) renderArticleDetail(app, route.split('/article/')[1]);
+    else if (route === '/books') renderBooks(app);
+    else if (route.match(/^\/book\/[^\/]+$/)) renderBookTOC(app, route.split('/book/')[1]);
+    else if (route.match(/^\/book\/[^\/]+\/[^\/]+$/)) {
+    const parts = route.replace('/book/', '').split('/');
+    renderBookChapter(app, parts[0], parts[1]);
+    }
     else if (route === '/about') renderAbout(app);
     else if (route === '/contact') renderContact(app);
     else if (route === '/admin') renderAdmin(app);
@@ -997,4 +1004,143 @@ function initTerminalUptime() {
     }, 60000); // Update every minute
 }
 
+// ============================================================
+// PAGE: BOOKS LIBRARY
+// ============================================================
+async function renderBooks(app) {
+    app.innerHTML = `
+        <section class="section" style="padding-top: calc(var(--nav-height) + 60px);">
+            <div class="container">
+                <div class="reveal">
+                    <span class="section-label">Library</span>
+                    <h2 class="section-title">Books & Deep Dives</h2>
+                    <p class="section-subtitle">Comprehensive, multi-chapter guides on systems programming and AI.</p>
+                </div>
+                <div class="books-grid reveal" id="booksGrid">
+                    <div class="loading-spinner"><div class="spinner"></div></div>
+                </div>
+            </div>
+        </section>
+    `;
+
+    try {
+        const { books } = await api('/books');
+        const grid = document.getElementById('booksGrid');
+        if (!books.length) {
+            grid.innerHTML = '<p style="color: var(--text-tertiary); text-align: center;">No books published yet. Check back soon!</p>';
+            return;
+        }
+        
+        grid.innerHTML = books.map(book => `
+            <a href="#/book/${book.slug}" class="book-card">
+                <div class="book-cover">${book.cover_emoji}</div>
+                <div class="book-info">
+                    <h3>${escapeHtml(book.title)}</h3>
+                    <p>${escapeHtml(book.description)}</p>
+                    <span class="btn btn-sm btn-primary" style="margin-top: 16px;">Read Book →</span>
+                </div>
+            </a>
+        `).join('');
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+// ============================================================
+// PAGE: BOOK TABLE OF CONTENTS
+// ============================================================
+async function renderBookTOC(app, bookSlug) {
+    app.innerHTML = `<div class="loading-spinner" style="min-height: 60vh;"><div class="spinner"></div></div>`;
+    
+    try {
+        const { book, chapters } = await api(`/books/${bookSlug}`);
+        app.innerHTML = `
+            <section class="section" style="padding-top: calc(var(--nav-height) + 60px);">
+                <div class="container book-toc-container">
+                    <a href="#/books" class="article-back">← Back to Library</a>
+                    <div class="book-header-hero reveal">
+                        <span class="book-emoji-large">${book.cover_emoji}</span>
+                        <h1 class="section-title">${escapeHtml(book.title)}</h1>
+                        <p class="section-subtitle" style="margin-bottom: 32px;">${escapeHtml(book.description)}</p>
+                        ${chapters.length > 0 ? `<a href="#/book/${bookSlug}/${chapters[0].slug}" class="btn btn-primary">Start Reading (Chapter 1) →</a>` : ''}
+                    </div>
+                    
+                    <div class="toc-wrapper reveal">
+                        <h3>Table of Contents</h3>
+                        <ol class="toc-list">
+                            ${chapters.map(ch => `
+                                <li>
+                                    <a href="#/book/${bookSlug}/${ch.slug}">
+                                        <span class="toc-index">${String(ch.chapter_index).padStart(2, '0')}.</span>
+                                        ${escapeHtml(ch.title)}
+                                    </a>
+                                </li>
+                            `).join('')}
+                        </ol>
+                    </div>
+                </div>
+            </section>
+        `;
+    } catch(e) {
+        app.innerHTML = `<div class="container" style="padding-top: 150px; text-align: center;"><h2>Book not found</h2><a href="#/books" class="btn btn-primary">Back to Library</a></div>`;
+    }
+}
+
+// ============================================================
+// PAGE: BOOK CHAPTER READER
+// ============================================================
+async function renderBookChapter(app, bookSlug, chapterSlug) {
+    app.innerHTML = `<div class="loading-spinner" style="min-height: 80vh;"><div class="spinner"></div></div>`;
+    
+    try {
+        const { book, chapter, prev, next } = await api(`/books/${bookSlug}/${chapterSlug}`);
+        
+        app.innerHTML = `
+            <div class="book-reader">
+                <div class="reader-top-bar">
+                    <div class="container reader-top-inner">
+                        <a href="#/book/${bookSlug}" class="reader-book-title">${book.cover_emoji} ${escapeHtml(book.title)}</a>
+                        <a href="#/book/${bookSlug}" class="reader-toc-link">Table of Contents</a>
+                    </div>
+                </div>
+                
+                <article class="article-detail container page-enter" style="padding-top: 40px;">
+                    <div class="article-detail-header">
+                        <div class="chapter-meta">Chapter ${chapter.chapter_index}</div>
+                        <h1 class="article-detail-title">${escapeHtml(chapter.title)}</h1>
+                    </div>
+                    <div class="article-content">
+                        ${marked.parse(chapter.content)}
+                    </div>
+                </article>
+                
+                <div class="chapter-nav container">
+                    <div class="nav-btn-wrapper left">
+                        ${prev ? `
+                            <a href="#/book/${bookSlug}/${prev.slug}" class="chapter-nav-btn">
+                                <span class="nav-dir">← Previous</span>
+                                <span class="nav-title">${escapeHtml(prev.title)}</span>
+                            </a>
+                        ` : '<div></div>'}
+                    </div>
+                    <div class="nav-btn-wrapper right">
+                        ${next ? `
+                            <a href="#/book/${bookSlug}/${next.slug}" class="chapter-nav-btn">
+                                <span class="nav-dir">Next →</span>
+                                <span class="nav-title">${escapeHtml(next.title)}</span>
+                            </a>
+                        ` : '<div></div>'}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
+    } catch (e) {
+        app.innerHTML = `<div class="container" style="padding-top: 150px; text-align: center;"><h2>Chapter not found</h2><a href="#/book/${bookSlug}" class="btn btn-primary">Back to TOC</a></div>`;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', initTerminalUptime);
+
+
