@@ -972,3 +972,29 @@ function debounce(fn, delay) {
         timer = setTimeout(() => fn(...args), delay);
     };
 }
+
+// ============================================
+// TERMINAL UPTIME COUNTER
+// ============================================
+function initTerminalUptime() {
+    const uptimeEl = document.getElementById('uptime-counter');
+    if (!uptimeEl) return;
+
+    // Base uptime: 5 years, 14 days, 8 hours, 32 minutes (in minutes)
+    let baseMinutes = (5 * 365 * 24 * 60) + (14 * 24 * 60) + (8 * 60) + 32;
+    const startTime = Date.now();
+    
+    setInterval(() => {
+        const elapsedMinutes = Math.floor((Date.now() - startTime) / 60000);
+        const totalMinutes = baseMinutes + elapsedMinutes;
+        
+        const years = Math.floor(totalMinutes / (365 * 24 * 60));
+        const days = Math.floor((totalMinutes % (365 * 24 * 60)) / (24 * 60));
+        const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+        const mins = totalMinutes % 60;
+        
+        uptimeEl.textContent = `${years}y ${days}d ${hours}h ${mins}m`;
+    }, 60000); // Update every minute
+}
+
+document.addEventListener('DOMContentLoaded', initTerminalUptime);

@@ -86,40 +86,94 @@
     </nav>
 
     <main id="app"></main>
+<footer class="terminal-footer" role="contentinfo">
+    <div class="terminal-window">
+        <!-- Terminal Window Header -->
+        <div class="terminal-header" aria-hidden="true">
+            <div class="terminal-controls">
+                <span class="control red"></span>
+                <span class="control yellow"></span>
+                <span class="control green"></span>
+            </div>
+            <div class="terminal-title">irshad@portfolio:~$ cat ./system/info.md</div>
+        </div>
+        
+        <div class="terminal-body">
+            <div class="terminal-grid">
+                <!-- 1. System Identity -->
+                <div class="terminal-block">
+                    <div class="terminal-comment"># SYSTEM_IDENTITY</div>
+                    <div class="terminal-prompt">
+                        <span class="user">irshad</span><span class="at">@</span><span class="host">dev</span>:<span class="path">~</span>$ <span class="cmd">whoami</span>
+                    </div>
+                    <div class="terminal-output">
+                        <span class="accent">&lt;Irshad Ali /&gt;</span>
+                        Systems Programmer &amp; AI Engineer
+                        <br>C++ • Rust • SQL • GNU/Linux
+                    </div>
+                    <div class="terminal-prompt">
+                        <span class="user">irshad</span><span class="at">@</span><span class="host">dev</span>:<span class="path">~</span>$ <span class="cmd">echo $STATUS</span>
+                    </div>
+                    <div class="terminal-output success">[AVAILABLE FOR HIRE]</div>
+                </div>
 
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-grid">
-                <div class="footer-brand">
-                    <h3>&lt;Irshad Ali /&gt;</h3>
-                    <p>Systems programmer, AI prompt engineer, and GNU/Linux advocate. Building software that's fast, safe, and elegant.</p>
+                <!-- 2. Directory Navigation (ls -la) -->
+                <div class="terminal-block">
+                    <div class="terminal-comment"># NAVIGATION</div>
+                    <div class="terminal-prompt">
+                        <span class="user">irshad</span><span class="at">@</span><span class="host">dev</span>:<span class="path">~</span>$ <span class="cmd">ls -la</span>
+                    </div>
+                    <div class="terminal-output">
+                        <a href="#/" class="terminal-link">drwxr-xr-x  home/</a>
+                        <a href="#/portfolio" class="terminal-link">drwxr-xr-x  portfolio/</a>
+                        <a href="#/articles" class="terminal-link">drwxr-xr-x  articles/</a>
+                        <a href="#/about" class="terminal-link">-rw-r--r--  about.md</a>
+                        <a href="#/contact" class="terminal-link">-rw-r--r--  contact.sh</a>
+                    </div>
                 </div>
-                <div class="footer-links">
-                    <h4>Navigate</h4>
-                    <a href="#/">Home</a>
-                    <a href="#/portfolio">Portfolio</a>
-                    <a href="#/articles">Articles</a>
-                    <a href="#/contact">Contact</a>
+
+                <!-- 3. Network Connections -->
+                <div class="terminal-block">
+                    <div class="terminal-comment"># NETWORK_PORTS</div>
+                    <div class="terminal-prompt">
+                        <span class="user">irshad</span><span class="at">@</span><span class="host">dev</span>:<span class="path">~</span>$ <span class="cmd">netstat -tulpn</span>
+                    </div>
+                    <div class="terminal-output">
+                        <a href="https://github.com/irshadali" target="_blank" rel="noopener" class="terminal-link">tcp 0 0 github.com:443 ESTABLISHED</a>
+                        <a href="https://linkedin.com/in/irshadali" target="_blank" rel="noopener" class="terminal-link">tcp 0 0 linkedin.com:443 ESTABLISHED</a>
+                        <a href="mailto:hello@irshadali.dev" class="terminal-link">tcp 0 0 smtp.mail:587 LISTENING</a>
+                    </div>
                 </div>
-                <div class="footer-links">
-                    <h4>Connect</h4>
-                    <a href="https://github.com/irshadali" target="_blank" rel="noopener">GitHub</a>
-                    <a href="https://linkedin.com/in/irshadali" target="_blank" rel="noopener">LinkedIn</a>
-                    <a href="mailto:hello@irshadali.dev">Email</a>
-                </div>
-                <div class="footer-links">
-                    <h4>For Recruiters</h4>
-                    <a href="#/about">Resume / CV</a>
-                    <a href="#/portfolio">Case Studies</a>
-                    <a href="#" id="downloadResume">Download PDF Resume</a>
+
+                <!-- 4. Skill Tree (Beginner to Advanced) -->
+                <div class="terminal-block">
+                    <div class="terminal-comment"># SKILL_TREE (Beginner → Advanced)</div>
+                    <div class="terminal-prompt">
+                        <span class="user">irshad</span><span class="at">@</span><span class="host">dev</span>:<span class="path">~</span>$ <span class="cmd">./show_progress.sh</span>
+                    </div>
+                    <div class="terminal-output skill-tree">
+                        <div class="skill-level"><span class="lvl-num">[LVL 1]</span> <span class="lvl-name">Bash/Linux</span> <span class="lvl-bar">██████████</span> <span class="lvl-pct">100%</span></div>
+                        <div class="skill-level"><span class="lvl-num">[LVL 2]</span> <span class="lvl-name">SQL/Indexing</span> <span class="lvl-bar">██████████</span> <span class="lvl-pct">100%</span></div>
+                        <div class="skill-level"><span class="lvl-num">[LVL 3]</span> <span class="lvl-name">C++ &amp; STL</span> <span class="lvl-bar">████████░░</span> <span class="lvl-pct">85%</span></div>
+                        <div class="skill-level"><span class="lvl-num">[LVL 4]</span> <span class="lvl-name">Rust/Safety</span> <span class="lvl-bar">███████░░░</span> <span class="lvl-pct">75%</span></div>
+                        <div class="skill-level"><span class="lvl-num">[LVL 5]</span> <span class="lvl-name">AI/Prompts</span> <span class="lvl-bar">█████████░</span> <span class="lvl-pct">90%</span></div>
+                    </div>
                 </div>
             </div>
-            <div class="footer-bottom">
-                <p>&copy; 2026 Irshad Ali. Built with <a href="https://bun.sh" target="_blank">Bun</a>, <a href="https://hono.dev" target="_blank">Hono</a> & ❤️</p>
+
+            <!-- Bottom Bar / Uptime -->
+            <div class="terminal-footer-bottom">
+                <div class="terminal-prompt">
+                    <span class="user">irshad</span><span class="at">@</span><span class="host">dev</span>:<span class="path">~</span>$ <span class="cmd">uptime</span>
+                </div>
+                <div class="terminal-output">
+                    &copy; 2026 Irshad Ali. System Uptime: <span id="uptime-counter" class="uptime-val">5y 14d 08h 32m</span>. 
+                    Compiled with <a href="https://bun.sh" target="_blank" class="inline-link">Bun</a> &amp; <a href="https://hono.dev" target="_blank" class="inline-link">Hono</a>. <span class="cursor" aria-hidden="true"></span>
+                </div>
             </div>
         </div>
-    </footer>
-
+    </div>
+</footer>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/rust.min.js"></script>
