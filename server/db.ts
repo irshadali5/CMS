@@ -1,0 +1,144 @@
+// server/db.ts
+import { Database } from "bun:sqlite";
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+
+const DB_PATH = process.env.DB_PATH || "./data/portfolio.db";
+
+// FIX: Ensure the parent directory exists before creating the database file
+mkdirSync(dirname(DB_PATH), { recursive: true });
+
+export const db = new Database(DB_PATH, { create: true });
+
+// Enable WAL mode for better concurrency
+db.exec("PRAGMA journal_mode = WAL;");
+db.exec("PRAGMA foreign_keys = ON;");
+
+export function migrate() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS articles (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      slug TEXT UNIQUE NOT NULL,
+      excerpt TEXT,
+      content TEXT NOT NULL,
+      tags TEXT DEFAULT '[]',
+      cover_image TEXT DEFAULT '',
+      published INTEGER DEFAULT 0,
+      views INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_articles_slug ON articles(slug);
+    CREATE INDEX IF NOT EXISTS idx_articles_published ON articles(published);
+
+    CREATE TABLE IF NOT EXISTS contacts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      subject TEXT,
+      message TEXT NOT NULL,
+      ip TEXT,
+      received_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+  `);
+
+  // Seed admin user if missing
+  const bcrypt = require("bcryptjs");
+  const count = db.query("SELECT COUNT(*) as c FROM admin_users").get() as any;
+  if (count.c === 0) {
+    const hash = bcrypt.hashSync(process.env.ADMIN_PASS || "admin123", 10);
+    db.query(
+      "INSERT INTO admin_users (username, password_hash, created_at) VALUES (?, ?, ?)"
+    ).run(
+      process.env.ADMIN_USER || "admin",
+      hash,
+      new Date().toISOString()
+    );
+    console.log("✓ Default admin user created");
+  }
+
+  // Seed sample articles if table is empty
+  const artCount = db.query("SELECT COUNT(*) as c FROM articles").get() as any;
+  if (artCount.c === 0) seedSampleArticles();
+}
+
+function seedSampleArticles() {
+  const samples = [
+    {
+      id: crypto.randomUUID(),
+      title: "Zero-Cost Abstractions in Rust: Building a Lock-Free Queue",
+      slug: "rust-zero-cost-lock-free-queue",
+      excerpt: "How Rust's type system and ownership model enable safe concurrent data structures without runtime overhead.",
+      content: `## Introduction\n\nRust provides zero-cost abstractions — you pay only for what you use. In this deep dive, we'll build a Michael-Scott lock-free queue from scratch, exploring how \`Arc\`, \`AtomicPtr\`, and \`Ordering\` work together.\n\n### The Core Idea\n\nA lock-free queue uses compare-and-swap (CAS) operations instead of mutexes. This gives us:\n\n- **No priority inversion**\n- **No deadlocks**\n- **Better cache locality** under contention\n\n\`\`\`rust\nuse std::sync::atomic::{AtomicPtr, Ordering};\nuse std::sync::Arc;\n\nstruct Node<T> {\n    value: Option<T>,\n    next: AtomicPtr<Node<T>>,\n}\n\npub struct Queue<T> {\n    head: AtomicPtr<Node<T>>,\n    tail: AtomicPtr<Node<T>>,\n}\n\`\`\`\n\n### Safety with Ownership\n\nThe magic of Rust is that the compiler prevents data races at compile time. No \`unsafe\` blocks needed for the public API!\n\n### Benchmarks\n\nOn an AMD Ryzen 9 7950X, our queue achieves **28M ops/sec** under 16 threads, compared to 12M ops/sec for \`std::sync::Mutex<VecDeque>\`.\n\n## Conclusion\n\nRust isn't just about safety — it's about giving you the tools to write high-performance systems code that you can actually reason about.`,
+      tags: JSON.stringify(["Rust", "Systems", "Concurrency"]),
+      published: 1,
+      views: 342,
+      created_at: "2026-03-15T10:00:00Z",
+    },
+    {
+      id: crypto.randomUUID(),
+      title: "Advanced Prompt Engineering: Structured Output with Chain-of-Thought",
+      slug: "advanced-prompt-engineering-structured-output",
+      excerpt: "Techniques for reliably extracting JSON, schemas, and reasoning chains from LLMs in production systems.",
+      content: `## Beyond "Act as a..."\n\nMost prompt engineering tutorials stop at role-playing. In production AI systems, we need **reliability**. Here's what actually works.\n\n### Technique 1: Schema-First Prompting\n\n\`\`\`python\nSYSTEM = """You are a strict JSON extractor.\nReturn ONLY valid JSON matching this schema:\n\n{\n  "entities": [{"name": "string", "type": "string", "confidence": 0.0-1.0}],\n  "summary": "string"\n}\n\nNo markdown. No explanation. If unsure, use null."""\n\`\`\`\n\n### Technique 2: Chain-of-Thought with Self-Verification\n\n\`\`\`\nStep 1: Read the input carefully.\nStep 2: List all candidate entities.\nStep 3: Verify each against the schema.\nStep 4: Output the final JSON only.\n\`\`\`\n\n### Technique 3: Few-Shot Calibration\n\nProvide 3-5 examples covering edge cases. LLMs are pattern matchers — show them the pattern.\n\n## Real-World Results\n\nOn a dataset of 10,000 support tickets, structured prompting improved extraction accuracy from **67% → 94%** with GPT-4.\n\n## The Prompt Engineer's Mindset\n\nThink like a compiler designer: define your input schema, handle errors explicitly, and test deterministically.`,
+      tags: JSON.stringify(["AI", "Prompt Engineering", "LLMs"]),
+      published: 1,
+      views: 1205,
+      created_at: "2026-04-22T14:30:00Z",
+    },
+    {
+      id: crypto.randomUUID(),
+      title: "Mastering GNU/Linux: From Bash One-Liners to Systemd Services",
+      slug: "gnu-linux-bash-systemd-mastery",
+      excerpt: "Essential Linux skills every developer should have — text processing, process management, and service creation.",
+      content: `## The Power of the Terminal\n\nGNU/Linux isn't just an OS — it's a philosophy of composability. Small tools, glued together with pipes.\n\n### Bash One-Liners That Save Hours\n\n\`\`\`bash\n# Find and kill zombie processes\nps aux | awk '$8 ~ /Z/ {print $2}' | xargs -r kill -9\n\n# Top 10 largest files in current dir\nfind . -type f -exec du -h {} + | sort -rh | head -n 10\n\n# Real-time log monitoring with color\ntail -f /var/log/syslog | grep --color 'ERROR\\|WARN\\|$'\n\`\`\`\n\n### Creating a Systemd Service\n\n\`\`\`ini\n# /etc/systemd/system/myapp.service\n[Unit]\nDescription=My Rust Web Service\nAfter=network.target\n\n[Service]\nType=simple\nUser=appuser\nExecStart=/opt/myapp/target/release/myapp\nRestart=always\nRestartSec=5\nEnvironment=RUST_LOG=info\n\n[Install]\nWantedBy=multi-user.target\n\`\`\`\n\nThen: \`sudo systemctl enable --now myapp\`\n\n### Process Management Deep Dive\n\nUnderstanding \`fork()\`, \`exec()\`, and signal handling is what separates users from engineers.\n\n\`\`\`c\n#include <unistd.h>\n#include <signal.h>\n\n// Graceful shutdown handling\nvoid handle_sigterm(int sig) {\n    cleanup();\n    exit(0);\n}\n\`\`\`\n\n## Conclusion\n\nThe terminal is your most powerful IDE. Invest in mastering it — it pays dividends across every project you'll ever touch.`,
+      tags: JSON.stringify(["GNU/Linux", "Bash", "Systems"]),
+      published: 1,
+      views: 891,
+      created_at: "2026-05-10T09:00:00Z",
+    },
+    {
+      id: crypto.randomUUID(),
+      title: "SQL Query Optimization: From 30s to 3ms",
+      slug: "sql-query-optimization-30s-to-3ms",
+      excerpt: "A real-world case study of diagnosing and fixing a slow PostgreSQL query using EXPLAIN ANALYZE.",
+      content: `## The Problem\n\nA report that used to take 30 seconds. After 2 hours of work: **3 milliseconds**.\n\n### The Original Query\n\n\`\`\`sql\nSELECT u.name, COUNT(o.id) as order_count, SUM(o.total) as total_spent\nFROM users u\nJOIN orders o ON u.id = o.user_id\nWHERE o.created_at > NOW() - INTERVAL '90 days'\nGROUP BY u.id\nORDER BY total_spent DESC\nLIMIT 100;\n\`\`\`\n\n### EXPLAIN ANALYZE Output\n\nThe smoking gun: **Seq Scan on orders** — 4.2M rows scanned.\n\n### The Fixes\n\n1. **Composite index**:\n\`\`\`sql\nCREATE INDEX idx_orders_user_created_total\nON orders (user_id, created_at) INCLUDE (total, id);\n\`\`\`\n\n2. **Materialized view** for daily snapshots\n3. **Covering index** eliminates table lookups entirely\n\n### Results\n\n- Before: 31.2 seconds, 4.2M rows\n- After: 2.8 milliseconds, 1,247 rows\n- **10,000x improvement**\n\n## Key Takeaways\n\n1. Always \`EXPLAIN ANALYZE\` before optimizing\n2. Know your index types (B-tree, GIN, BRIN)\n3. Understand table statistics (\`ANALYZE\`)\n4. Sometimes denormalization is the right answer\n\nSQL is not just a query language — it's a database programming language. Treat it with respect.`,
+      tags: JSON.stringify(["SQL", "PostgreSQL", "Performance"]),
+      published: 1,
+      views: 567,
+      created_at: "2026-06-05T16:20:00Z",
+    },
+  ];
+
+  // ✅ FIX: Use positional parameters (?) instead of named parameters ($name)
+  // This completely avoids the object key mismatch that caused the NOT NULL error.
+  const insert = db.query(`
+    INSERT INTO articles (id, title, slug, excerpt, content, tags, cover_image, published, views, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, '', ?, ?, ?, ?)
+  `);
+
+  for (const s of samples) {
+    insert.run(
+      s.id,
+      s.title,
+      s.slug,
+      s.excerpt,
+      s.content,
+      s.tags,
+      s.published,
+      s.views,
+      s.created_at,
+      s.created_at // maps to updated_at
+    );
+  }
+  console.log(`✓ Seeded ${samples.length} sample articles`);
+}

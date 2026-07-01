@@ -3,16 +3,29 @@
 // ============================================================
 
 // ===================== CONFIG =====================
+// ============= TOP OF app.js =============
 const API_BASE = '/api';
 const APP = {
-    name: 'John Doe',
-    title: 'Full-Stack Developer',
-    tagline: 'I build exceptional digital experiences and write about the craft of software engineering.',
-    email: 'hello@johndoe.dev',
-    github: 'https://github.com/johndoe',
-    linkedin: 'https://linkedin.com/in/johndoe',
-    twitter: 'https://twitter.com/johndoe',
+    name: 'Irshad Ali',
+    title: 'Systems Developer & AI Prompt Engineer',
+    tagline: 'I write C++ for speed, Rust for safety, SQL for data, and prompts for intelligence. Welcome to my corner of the internet.',
+    email: 'irshadali5@proton.me',
+    github: 'https://github.com/irshadali5',
+    linkedin: 'https://linkedin.com/in/irshadali',
+    twitter: 'https://twitter.com/irshadali',
 };
+
+// Configure marked with highlight.js
+marked.setOptions({
+    highlight: function(code, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+            return hljs.highlight(code, { language: lang }).value;
+        }
+        return hljs.highlightAuto(code).value;
+    },
+    breaks: true,
+    gfm: true,
+});
 
 // ===================== STATE =====================
 const state = {
@@ -152,7 +165,6 @@ function initRevealAnimations() {
 // ============================================================
 function renderHome(app) {
     app.innerHTML = `
-        <!-- HERO -->
         <section class="hero">
             <div class="hero-grid-bg"></div>
             <div class="hero-orb hero-orb-1"></div>
@@ -166,7 +178,7 @@ function renderHome(app) {
                     </div>
                     <h1 class="hero-title">
                         Hi, I'm <span class="gradient-text">${APP.name}</span>.<br>
-                        I build things<br>for the web.
+                        I build systems<br>that <span class="gradient-text">perform</span>.
                     </h1>
                     <p class="hero-subtitle">${APP.tagline}</p>
                     <div class="hero-actions">
@@ -183,14 +195,14 @@ function renderHome(app) {
                     <div class="hero-stats">
                         <div>
                             <span class="hero-stat-number">5+</span>
-                            <span class="hero-stat-label">Years Experience</span>
+                            <span class="hero-stat-label">Years in Systems</span>
                         </div>
                         <div>
-                            <span class="hero-stat-number">40+</span>
-                            <span class="hero-stat-label">Projects Delivered</span>
+                            <span class="hero-stat-number">30+</span>
+                            <span class="hero-stat-label">Projects Shipped</span>
                         </div>
                         <div>
-                            <span class="hero-stat-number">20+</span>
+                            <span class="hero-stat-number">15+</span>
                             <span class="hero-stat-label">Articles Published</span>
                         </div>
                     </div>
@@ -198,19 +210,19 @@ function renderHome(app) {
             </div>
         </section>
 
-        <!-- SKILLS PREVIEW -->
+        <!-- SKILLS -->
         <section class="section" style="background: var(--bg-secondary);">
             <div class="container">
                 <div class="reveal">
                     <span class="section-label">Expertise</span>
                     <h2 class="section-title">Skills & Technologies</h2>
-                    <p class="section-subtitle">A comprehensive toolkit honed over years of building production systems.</p>
+                    <p class="section-subtitle">A specialist's toolkit — built around performance, safety, and reliability.</p>
                 </div>
                 <div class="skills-grid reveal">
-                    ${renderSkillCard('🎨', 'Frontend', ['React', 'Next.js', 'TypeScript', 'Tailwind CSS', 'Vue.js', 'HTML/CSS'])}
-                    ${renderSkillCard('⚙️', 'Backend', ['Node.js', 'Python', 'Go', 'PostgreSQL', 'MongoDB', 'Redis'])}
-                    ${renderSkillCard('☁️', 'DevOps & Cloud', ['AWS', 'Docker', 'Kubernetes', 'CI/CD', 'Terraform', 'Linux'])}
-                    ${renderSkillCard('🧪', 'Practices', ['TDD', 'Agile/Scrum', 'System Design', 'Code Review', 'REST/GraphQL', 'Microservices'])}
+                    ${renderSkillCard('⚡', 'Systems Programming', ['C++', 'C++20', 'Rust', 'Memory Management', 'Concurrency', 'Lock-Free DS'])}
+                    ${renderSkillCard('🐧', 'GNU/Linux & DevOps', ['Bash', 'Systemd', 'Docker', 'Linux Kernel', 'GCC/Clang', 'Make/CMake'])}
+                    ${renderSkillCard('🗄️', 'Data & SQL', ['PostgreSQL', 'MySQL', 'SQLite', 'Query Optimization', 'Schema Design', 'Redis'])}
+                    ${renderSkillCard('🧠', 'AI & Prompt Engineering', ['LLMs', 'Chain-of-Thought', 'Structured Output', 'RAG', 'OpenAI API', 'LangChain'])}
                 </div>
             </div>
         </section>
@@ -223,9 +235,9 @@ function renderHome(app) {
                     <h2 class="section-title">Selected Projects</h2>
                 </div>
                 <div class="projects-grid reveal">
-                    ${renderProjectCard('🛒', 'E-Commerce Platform', 'Full-Stack', 'A scalable marketplace handling 10K+ daily transactions with real-time inventory.', ['React', 'Node.js', 'PostgreSQL', 'Stripe'], '#')}
-                    ${renderProjectCard('📊', 'Analytics Dashboard', 'Frontend', 'Real-time data visualization platform with customizable widgets and team collaboration.', ['Next.js', 'D3.js', 'WebSocket', 'Redis'], '#')}
-                    ${renderProjectCard('🤖', 'AI Content Assistant', 'Full-Stack', 'ML-powered writing assistant with NLP capabilities serving 5K+ active users.', ['Python', 'FastAPI', 'React', 'OpenAI'], '#')}
+                    ${renderProjectCard('🦀', 'Lock-Free Queue (Rust)', 'Systems', 'A Michael-Scott lock-free queue implementation with 28M ops/sec throughput, zero unsafe blocks in the public API.', ['Rust', 'Atomics', 'Concurrency'], '#')}
+                    ${renderProjectCard('⚙️', 'C++ Memory Allocator', 'Systems', 'Custom slab allocator 4x faster than glibc malloc for specific workloads, used in a high-frequency trading system.', ['C++', 'Templates', 'Benchmarking'], '#')}
+                    ${renderProjectCard('🤖', 'AI Content Extractor', 'AI/Prompt', 'Production LLM pipeline extracting structured data from 10K+ documents daily with 94% accuracy via schema-first prompting.', ['Python', 'OpenAI', 'PostgreSQL'], '#')}
                 </div>
                 <div style="text-align: center; margin-top: 48px;" class="reveal">
                     <a href="#/portfolio" class="btn btn-secondary">View All Projects →</a>
@@ -239,7 +251,7 @@ function renderHome(app) {
                 <div class="reveal">
                     <span class="section-label">Writing</span>
                     <h2 class="section-title">Latest Articles</h2>
-                    <p class="section-subtitle">Thoughts on software engineering, architecture, and developer experience.</p>
+                    <p class="section-subtitle">Deep dives into systems programming, database optimization, and AI prompt engineering.</p>
                 </div>
                 <div id="homeArticles" class="articles-grid reveal">
                     <div class="loading-spinner"><div class="spinner"></div></div>
@@ -251,8 +263,8 @@ function renderHome(app) {
         <section class="section">
             <div class="container" style="text-align: center;">
                 <div class="reveal">
-                    <h2 class="section-title" style="max-width: 600px; margin: 0 auto 16px;">Let's Build Something <span style="color: var(--accent);">Great</span> Together</h2>
-                    <p class="section-subtitle" style="margin: 0 auto 32px; text-align: center;">Whether you're a recruiter, a fellow developer, or someone with an idea — I'd love to hear from you.</p>
+                    <h2 class="section-title" style="max-width: 700px; margin: 0 auto 16px;">Let's Build Something <span style="color: var(--accent);">Fast, Safe & Smart</span></h2>
+                    <p class="section-subtitle" style="margin: 0 auto 32px; text-align: center;">Whether you need a systems engineer, a SQL optimizer, or an AI prompt architect — let's talk.</p>
                     <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
                         <a href="#/contact" class="btn btn-primary">Start a Conversation</a>
                         <a href="#/about" class="btn btn-secondary">Download Resume</a>
@@ -261,8 +273,6 @@ function renderHome(app) {
             </div>
         </section>
     `;
-
-    // Load latest articles
     loadHomeArticles();
 }
 
@@ -289,47 +299,46 @@ function renderPortfolio(app) {
                 <div class="reveal">
                     <span class="section-label">Portfolio</span>
                     <h2 class="section-title">My Work & Case Studies</h2>
-                    <p class="section-subtitle">A curated collection of projects demonstrating my skills across the full stack.</p>
+                    <p class="section-subtitle">Projects demonstrating systems programming, database optimization, and AI engineering.</p>
                 </div>
 
                 <div class="filter-tabs reveal">
                     <button class="filter-tab active" data-filter="all">All</button>
-                    <button class="filter-tab" data-filter="fullstack">Full-Stack</button>
-                    <button class="filter-tab" data-filter="frontend">Frontend</button>
-                    <button class="filter-tab" data-filter="backend">Backend</button>
-                    <button class="filter-tab" data-filter="devops">DevOps</button>
+                    <button class="filter-tab" data-filter="systems">Systems</button>
+                    <button class="filter-tab" data-filter="data">Data & SQL</button>
+                    <button class="filter-tab" data-filter="ai">AI/Prompt</button>
+                    <button class="filter-tab" data-filter="linux">Linux/DevOps</button>
                 </div>
 
                 <div class="projects-grid reveal" id="portfolioGrid">
-                    ${renderProjectCard('🛒', 'E-Commerce Platform', 'Full-Stack', 'A scalable marketplace handling 10K+ daily transactions with real-time inventory management, payment processing, and order fulfillment.', ['React', 'Node.js', 'PostgreSQL', 'Stripe', 'Redis'], '#', 'fullstack')}
-                    ${renderProjectCard('📊', 'Analytics Dashboard', 'Frontend', 'Real-time data visualization platform with customizable widgets, team collaboration, and PDF report generation.', ['Next.js', 'D3.js', 'WebSocket', 'TypeScript'], '#', 'frontend')}
-                    ${renderProjectCard('🤖', 'AI Content Assistant', 'Full-Stack', 'ML-powered writing assistant with NLP capabilities, serving 5K+ active users with 99.9% uptime.', ['Python', 'FastAPI', 'React', 'OpenAI', 'AWS'], '#', 'fullstack')}
-                    ${renderProjectCard('🔐', 'Auth Microservice', 'Backend', 'Centralized authentication service with OAuth2, JWT, MFA support, handling 1M+ auth requests daily.', ['Go', 'gRPC', 'PostgreSQL', 'Redis'], '#', 'backend')}
-                    ${renderProjectCard('🚀', 'CI/CD Pipeline', 'DevOps', 'Automated deployment pipeline reducing release cycles from days to minutes with zero-downtime deployments.', ['GitHub Actions', 'Docker', 'K8s', 'Terraform'], '#', 'devops')}
-                    ${renderProjectCard('📱', 'Health Tracker App', 'Frontend', 'Cross-platform mobile app for health metrics tracking with offline-first architecture and data sync.', ['React Native', 'SQLite', 'GraphQL'], '#', 'frontend')}
+                    ${renderProjectCard('🦀', 'Lock-Free Queue (Rust)', 'Systems', 'Michael-Scott queue achieving 28M ops/sec on 16 threads. No unsafe blocks in public API. Full benchmarks included.', ['Rust', 'Atomics', 'Arc'], '#', 'systems')}
+                    ${renderProjectCard('⚙️', 'Custom Slab Allocator', 'Systems', 'C++ memory allocator 4x faster than glibc for HFT workloads. Template-based, zero-overhead.', ['C++20', 'Templates', 'SIMD'], '#', 'systems')}
+                    ${renderProjectCard('🤖', 'AI Document Extractor', 'AI/Prompt', 'Production pipeline processing 10K+ docs/day with 94% accuracy using schema-first prompting.', ['Python', 'OpenAI', 'PostgreSQL'], '#', 'ai')}
+                    ${renderProjectCard('🗄️', 'Query Optimizer Engine', 'Data & SQL', 'Tool that analyzes PostgreSQL EXPLAIN output and suggests indexes. Reduced a 30s query to 3ms.', ['SQL', 'PostgreSQL', 'Python'], '#', 'data')}
+                    ${renderProjectCard('🐧', 'Systemd Service Manager', 'Linux/DevOps', 'CLI tool for generating, validating, and deploying systemd unit files across clusters.', ['Go', 'Systemd', 'Linux'], '#', 'linux')}
+                    ${renderProjectCard('📊', 'RAG Pipeline for Docs', 'AI/Prompt', 'Retrieval-Augmented Generation system for internal docs. 85% answer accuracy with citation tracking.', ['LangChain', 'OpenAI', 'Pinecone'], '#', 'ai')}
                 </div>
 
-                <!-- Experience Timeline -->
                 <div style="margin-top: 100px;">
                     <div class="reveal">
                         <span class="section-label">Experience</span>
                         <h2 class="section-title">Career Journey</h2>
                     </div>
                     <div class="timeline reveal">
-                        ${renderTimelineItem('2024 — Present', 'Senior Full-Stack Developer', 'TechCorp Inc.', [
-                            'Led migration of monolith to microservices, reducing deployment time by 80%',
-                            'Mentored team of 5 junior developers, conducting weekly code reviews',
-                            'Architected real-time notification system serving 500K+ users'
+                        ${renderTimelineItem('2024 — Present', 'Senior Systems Developer', 'TechCorp', [
+                            'Led migration of C++ monolith to modular Rust services, reducing memory usage by 62%',
+                            'Built custom allocator saving $40K/year in cloud compute costs',
+                            'Designed AI-powered log analysis pipeline processing 2TB/day'
                         ])}
-                        ${renderTimelineItem('2022 — 2024', 'Full-Stack Developer', 'StartupXYZ', [
-                            'Built MVP from zero to 10K users in 6 months',
-                            'Implemented payment integration processing $2M+ in transactions',
-                            'Established testing culture achieving 90%+ code coverage'
+                        ${renderTimelineItem('2022 — 2024', 'AI & Data Engineer', 'DataScale Inc.', [
+                            'Built LLM prompt engineering framework used across 12 production services',
+                            'Optimized PostgreSQL queries achieving 10,000x performance improvement on critical reports',
+                            'Mentored team on structured output prompting, reducing hallucinations by 73%'
                         ])}
-                        ${renderTimelineItem('2021 — 2022', 'Frontend Developer', 'Agency Creative', [
-                            'Delivered 15+ client projects on time and within budget',
-                            'Created reusable component library reducing development time by 40%',
-                            'Optimized Core Web Vitals achieving 95+ Lighthouse scores'
+                        ${renderTimelineItem('2021 — 2022', 'Linux Systems Engineer', 'Infrastructure Co.', [
+                            'Maintained 500+ GNU/Linux servers with 99.99% uptime',
+                            'Automated deployments using systemd, Ansible, and custom tooling',
+                            'Wrote internal bash/Python utilities saving team 20 hours/week'
                         ])}
                     </div>
                 </div>
@@ -337,23 +346,17 @@ function renderPortfolio(app) {
         </section>
     `;
 
-    // Filter functionality
     document.querySelectorAll('.filter-tab').forEach(tab => {
         tab.addEventListener('click', () => {
             document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             const filter = tab.dataset.filter;
             document.querySelectorAll('.project-card').forEach(card => {
-                if (filter === 'all' || card.dataset.category === filter) {
-                    card.style.display = '';
-                } else {
-                    card.style.display = 'none';
-                }
+                card.style.display = (filter === 'all' || card.dataset.category === filter) ? '' : 'none';
             });
         });
     });
 }
-
 // ============================================================
 // PAGE: ARTICLES (For Viewers)
 // ============================================================
@@ -444,9 +447,10 @@ async function loadArticlesList() {
 // ============================================================
 async function renderArticleDetail(app, slug) {
     app.innerHTML = `<div class="loading-spinner" style="min-height: 80vh;"><div class="spinner"></div></div>`;
-
     try {
         const article = await api(`/articles/${slug}`);
+        const rendered = marked.parse(article.content);
+
         app.innerHTML = `
             <article class="article-detail container page-enter">
                 <div class="article-detail-header">
@@ -456,34 +460,49 @@ async function renderArticleDetail(app, slug) {
                         <span>📅 ${formatDate(article.createdAt)}</span>
                         <span>👁️ ${article.views || 0} views</span>
                         <span>⏱️ ${estimateReadTime(article.content)} min read</span>
+                        <span>✍️ ${APP.name}</span>
                     </div>
                     <div class="article-tags" style="margin-top: 16px;">
                         ${article.tags.map(t => `<span class="article-tag">${escapeHtml(t)}</span>`).join('')}
                     </div>
                 </div>
-                <div class="article-content">
-                    ${marked.parse(article.content)}
-                </div>
+                <div class="article-content">${rendered}</div>
                 <div style="margin-top: 60px; padding-top: 40px; border-top: 1px solid var(--border); text-align: center;">
                     <h3 style="margin-bottom: 8px;">Enjoyed this article?</h3>
-                    <p style="color: var(--text-secondary); margin-bottom: 24px;">Share your thoughts or explore more content.</p>
-                    <div style="display: flex; gap: 12px; justify-content: center;">
+                    <p style="color: var(--text-secondary); margin-bottom: 24px;">Share it or explore more content.</p>
+                    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                         <a href="#/articles" class="btn btn-secondary">More Articles</a>
                         <a href="#/contact" class="btn btn-primary">Get in Touch</a>
+                        <button class="btn btn-ghost" onclick="shareArticle('${escapeHtml(article.title)}', window.location.href)">Share</button>
                     </div>
                 </div>
             </article>
         `;
+
+        // Re-highlight any code blocks that marked didn't catch
+        document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightElement(block);
+        });
     } catch (e) {
         app.innerHTML = `
             <div class="container" style="text-align: center; padding-top: 200px;">
                 <h2>Article Not Found</h2>
-                <p style="color: var(--text-secondary); margin: 16px 0 32px;">The article you're looking for doesn't exist or has been removed.</p>
+                <p style="color: var(--text-secondary); margin: 16px 0 32px;">The article doesn't exist or has been removed.</p>
                 <a href="#/articles" class="btn btn-primary">Browse Articles</a>
             </div>
         `;
     }
 }
+
+// Add share helper
+window.shareArticle = async (title, url) => {
+    if (navigator.share) {
+        await navigator.share({ title, url });
+    } else {
+        await navigator.clipboard.writeText(url);
+        showToast('Link copied to clipboard!', 'success');
+    }
+};
 
 // ============================================================
 // PAGE: ABOUT
@@ -498,33 +517,22 @@ function renderAbout(app) {
                     </div>
                     <div class="reveal">
                         <span class="section-label">About Me</span>
-                        <h2 class="section-title">John Doe</h2>
+                        <h2 class="section-title">Irshad Ali</h2>
                         <div class="about-text">
-                            <p>I'm a full-stack developer with 5+ years of experience building web applications that scale. I'm passionate about clean architecture, developer experience, and writing code that other humans can actually read.</p>
-                            <p>When I'm not coding, I write technical articles to share what I've learned. I believe in open source, continuous learning, and the power of well-crafted software to solve real problems.</p>
-                            <p><strong>For Interviewers:</strong> I've included my career timeline on the Portfolio page, and you can download my resume below. I'm always open to discussing system design, architecture trade-offs, and engineering culture.</p>
+                            <p>I'm a systems developer with a passion for writing software that's fast, safe, and elegant. I specialize in <strong>C++</strong> for performance-critical code, <strong>Rust</strong> for memory-safe systems, and <strong>SQL</strong> for data-intensive applications.</p>
+                            <p>On the AI side, I'm a <strong>prompt engineer</strong> who treats LLM prompting like compiler design — deterministic, schema-driven, and tested. I've shipped production AI pipelines that reliably extract structured data from unstructured sources.</p>
+                            <p>I live in <strong>GNU/Linux</strong> — not because it's trendy, but because it's the right tool. From kernel tuning to systemd services, I've spent years mastering the Unix philosophy of small tools composed together.</p>
+                            <p><strong>For Recruiters:</strong> My career timeline is on the Portfolio page. I'm open to roles in systems programming, database engineering, or AI infrastructure. Let's talk about trade-offs, not buzzwords.</p>
                         </div>
                         <div class="about-highlights">
-                            <div class="highlight-card">
-                                <div class="highlight-number">5+</div>
-                                <div class="highlight-label">Years Experience</div>
-                            </div>
-                            <div class="highlight-card">
-                                <div class="highlight-number">40+</div>
-                                <div class="highlight-label">Projects</div>
-                            </div>
-                            <div class="highlight-card">
-                                <div class="highlight-number">20+</div>
-                                <div class="highlight-label">Articles</div>
-                            </div>
-                            <div class="highlight-card">
-                                <div class="highlight-number">500+</div>
-                                <div class="highlight-label">GitHub Stars</div>
-                            </div>
+                            <div class="highlight-card"><div class="highlight-number">5+</div><div class="highlight-label">Years Systems</div></div>
+                            <div class="highlight-card"><div class="highlight-number">30+</div><div class="highlight-label">Projects</div></div>
+                            <div class="highlight-card"><div class="highlight-number">15+</div><div class="highlight-label">Articles</div></div>
+                            <div class="highlight-card"><div class="highlight-number">1M+</div><div class="highlight-label">Lines of C++/Rust</div></div>
                         </div>
                         <div style="margin-top: 32px; display: flex; gap: 12px; flex-wrap: wrap;">
-                            <button class="btn btn-primary" onclick="showToast('Resume download started!', 'success')">📄 Download Resume (PDF)</button>
-                            <a href="${APP.github}" target="_blank" class="btn btn-secondary">GitHub Profile</a>
+                            <button class="btn btn-primary" onclick="showToast('Resume download started!', 'success')">📄 Download Resume</button>
+                            <a href="${APP.github}" target="_blank" class="btn btn-secondary">GitHub</a>
                             <a href="${APP.linkedin}" target="_blank" class="btn btn-secondary">LinkedIn</a>
                         </div>
                     </div>
@@ -533,7 +541,6 @@ function renderAbout(app) {
         </section>
     `;
 }
-
 // ============================================================
 // PAGE: CONTACT
 // ============================================================
