@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Systems & Architecture — From Theory to Implementation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:        #0c1014;
+    --panel:     #11161b;
+    --panel-2:   #161c22;
+    --border:    #232b32;
+    --text:      #c7d0d6;
+    --text-dim:  #7c8893;
+    --text-bright:#eef3f6;
+    --amber:     #e3a356;
+    --amber-dim: #8a6735;
+    --teal:      #5fb3ad;
+    --red:       #d96c6c;
+    --green:     #84b87f;
+    --mono-h: 'JetBrains Mono', monospace;
+    --mono-b: 'IBM Plex Mono', monospace;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--mono-b);
+    font-size:15px;
+    line-height:1.7;
+    display:flex;
+    min-height:100vh;
+  }
+
+  ::selection{background:var(--amber-dim); color:var(--text-bright);}
+
+  /* ---------- SIDEBAR ---------- */
+  #sidebar{
+    width:300px;
+    flex-shrink:0;
+    background:var(--panel);
+    border-right:1px solid var(--border);
+    height:100vh;
+    position:sticky;
+    top:0;
+    overflow-y:auto;
+    padding:0 0 40px 0;
+  }
+  #sidebar::-webkit-scrollbar{width:8px;}
+  #sidebar::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+
+  .brand{
+    padding:22px 20px 16px 20px;
+    border-bottom:1px solid var(--border);
+  }
+  .brand .prompt{
+    color:var(--green);
+    font-family:var(--mono-h);
+    font-size:12px;
+    opacity:.8;
+  }
+  .brand h1{
+    font-family:var(--mono-h);
+    font-size:15px;
+    font-weight:700;
+    color:var(--text-bright);
+    margin-top:6px;
+    letter-spacing:.2px;
+  }
+  .brand .sub{
+    color:var(--text-dim);
+    font-size:11.5px;
+    margin-top:6px;
+  }
+  .progress-bar{
+    margin-top:12px;
+    height:4px;
+    background:var(--panel-2);
+    border-radius:2px;
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    width:3.2%;
+    background:linear-gradient(90deg, var(--amber-dim), var(--amber));
+  }
+  .progress-label{
+    font-size:10px;
+    color:var(--text-dim);
+    margin-top:5px;
+  }
+
+  .part{
+    margin-top:6px;
+  }
+  .part-header{
+    padding:14px 20px 6px 20px;
+    font-family:var(--mono-h);
+    font-size:10.5px;
+    letter-spacing:1.2px;
+    color:var(--amber);
+    opacity:.85;
+    text-transform:uppercase;
+  }
+  .chapter{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+    padding:7px 20px 7px 24px;
+    font-size:13px;
+    color:var(--text-dim);
+    cursor:pointer;
+    border-left:2px solid transparent;
+    transition:background .12s ease, color .12s ease;
+  }
+  .chapter:hover{ background:var(--panel-2); color:var(--text); }
+  .chapter.active{
+    color:var(--amber);
+    background:var(--panel-2);
+    border-left:2px solid var(--amber);
+  }
+  .chapter .num{
+    color:var(--text-dim);
+    font-size:11px;
+    width:22px;
+    flex-shrink:0;
+  }
+  .chapter.active .num{ color:var(--amber); }
+  .chapter .status{
+    margin-left:auto;
+    font-size:9.5px;
+    flex-shrink:0;
+  }
+  .chapter .status.done{ color:var(--green); }
+  .chapter .status.pending{ color:var(--text-dim); opacity:.5; }
+
+  /* ---------- MAIN ---------- */
+  #main{
+    flex:1;
+    min-width:0;
+    height:100vh;
+    overflow-y:auto;
+  }
+  .topbar{
+    position:sticky;
+    top:0;
+    z-index:5;
+    background:rgba(12,16,20,0.92);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--border);
+    padding:10px 40px;
+    font-family:var(--mono-h);
+    font-size:11.5px;
+    color:var(--text-dim);
+    display:flex;
+    justify-content:space-between;
+  }
+  .topbar .cursor{
+    display:inline-block;
+    width:7px; height:13px;
+    background:var(--amber);
+    margin-left:2px;
+    animation:blink 1.1s steps(1) infinite;
+    vertical-align:-2px;
+  }
+  @keyframes blink{ 50%{opacity:0;} }
+
+  .content{
+    max-width:780px;
+    margin:0 auto;
+    padding:56px 40px 120px 40px;
+  }
+
+  .chapter-eyebrow{
+    font-family:var(--mono-h);
+    color:var(--text-dim);
+    font-size:12px;
+    margin-bottom:10px;
+  }
+  .chapter-eyebrow .b{ color:var(--green); }
+
+  h2.title{
+    font-family:var(--mono-h);
+    font-size:30px;
+    font-weight:800;
+    color:var(--text-bright);
+    line-height:1.25;
+    margin-bottom:6px;
+  }
+  .deck{
+    color:var(--text-dim);
+    font-size:14.5px;
+    margin-bottom:34px;
+    max-width:62ch;
+  }
+
+  h3{
+    font-family:var(--mono-h);
+    font-size:18px;
+    color:var(--amber);
+    margin:42px 0 14px 0;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  h3::before{
+    content:"§";
+    color:var(--text-dim);
+    font-size:14px;
+  }
+  h4{
+    font-family:var(--mono-h);
+    font-size:14.5px;
+    color:var(--teal);
+    margin:26px 0 10px 0;
+  }
+  p{ margin-bottom:15px; color:var(--text); max-width:68ch; }
+  strong{ color:var(--text-bright); font-weight:600; }
+  em{ color:var(--teal); font-style:normal; }
+
+  ul, ol{ margin:0 0 16px 0; padding-left:22px; max-width:66ch; }
+  li{ margin-bottom:7px; color:var(--text); }
+  li::marker{ color:var(--amber-dim); }
+
+  .callout{
+    border-left:3px solid var(--amber);
+    background:var(--panel);
+    padding:14px 18px;
+    margin:22px 0;
+    font-size:13.5px;
+    color:var(--text-dim);
+    border-radius:0 4px 4px 0;
+  }
+  .callout .lbl{
+    font-family:var(--mono-h);
+    color:var(--amber);
+    font-size:10.5px;
+    letter-spacing:.8px;
+    text-transform:uppercase;
+    margin-bottom:6px;
+    display:block;
+  }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin:18px 0 28px 0;
+    font-size:13px;
+  }
+  th{
+    text-align:left;
+    font-family:var(--mono-h);
+    color:var(--amber);
+    font-size:11px;
+    letter-spacing:.5px;
+    text-transform:uppercase;
+    padding:9px 12px;
+    border-bottom:1px solid var(--border);
+  }
+  td{
+    padding:9px 12px;
+    border-bottom:1px solid var(--border);
+    color:var(--text);
+    vertical-align:top;
+  }
+  tr:hover td{ background:var(--panel); }
+
+  /* code windows */
+  .codewin{
+    margin:18px 0 28px 0;
+    border:1px solid var(--border);
+    border-radius:7px;
+    overflow:hidden;
+    background:#0a0d10;
+  }
+  .codewin .bar{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:9px 14px;
+    background:var(--panel-2);
+    border-bottom:1px solid var(--border);
+  }
+  .codewin .dot{ width:9px; height:9px; border-radius:50%; }
+  .codewin .dot.r{ background:#d96c6c; }
+  .codewin .dot.y{ background:#e3c356; }
+  .codewin .dot.g{ background:#84b87f; }
+  .codewin .fname{
+    margin-left:8px;
+    font-family:var(--mono-h);
+    font-size:11.5px;
+    color:var(--text-dim);
+  }
+  .codewin pre{
+    margin:0;
+    padding:16px 18px;
+    overflow-x:auto;
+    font-family:var(--mono-b);
+    font-size:12.8px;
+    line-height:1.65;
+    color:#d3dadf;
+  }
+  .codewin code{ font-family:inherit; }
+  .kw{ color:#c189d6; }
+  .ty{ color:#5fb3ad; }
+  .fn{ color:#e3a356; }
+  .cm{ color:#5f6b75; font-style:italic; }
+  .st{ color:#84b87f; }
+  .nu{ color:#d9a06c; }
+
+  code.inline{
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    padding:1.5px 6px;
+    border-radius:4px;
+    font-size:12.5px;
+    color:var(--amber);
+  }
+
+  .pending-block{
+    margin-top:60px;
+    padding:50px 30px;
+    text-align:center;
+    border:1px dashed var(--border);
+    border-radius:8px;
+    color:var(--text-dim);
+  }
+  .pending-block .glyph{
+    font-family:var(--mono-h);
+    color:var(--amber-dim);
+    font-size:13px;
+    margin-bottom:10px;
+  }
+  .pending-block p{ max-width:48ch; margin:0 auto; font-size:13px; }
+
+  .chapnav{
+    display:flex;
+    justify-content:space-between;
+    margin-top:64px;
+    padding-top:22px;
+    border-top:1px solid var(--border);
+    font-family:var(--mono-h);
+    font-size:12px;
+  }
+  .chapnav span{ color:var(--text-dim); display:block; font-size:10px; margin-bottom:4px;}
+  .chapnav a{ color:var(--amber); text-decoration:none; cursor:pointer; }
+  .chapnav a:hover{ text-decoration:underline; }
+  .chapnav .next{ text-align:right; }
+
+  @media(max-width:880px){
+    #sidebar{ position:fixed; left:-300px; transition:left .2s ease; z-index:20; }
+    #sidebar.open{ left:0; }
+    .content{ padding:50px 22px 100px 22px; }
+    .topbar{ padding:10px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<aside id="sidebar">
+  <div class="brand">
+    <div class="prompt">root@architect:~$</div>
+    <h1>Systems &amp; Architecture</h1>
+    <div class="sub">Theory → Trade-offs → C++ / Rust Implementation</div>
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+    <div class="progress-label">1 / 31 chapters drafted</div>
+  </div>
+
+  <div id="nav"></div>
+</aside>
+
+<main id="main">
+  <div class="topbar">
+    <span id="crumb">part_i / ch01_what_is_system_design.md<span class="cursor"></span></span>
+    <span>c++17 · rust 2021</span>
+  </div>
+  <div class="content" id="content"></div>
+</main>
+
+<script>
+const TOC = [
+  { part: "Part I — Foundations", chapters: [
+    ["What System Design Actually Is", "ch01", "done"],
+    ["Computational Costs That Shape Every Design", "ch02", "pending"],
+    ["Memory Models: Stack, Heap, Ownership", "ch03", "pending"],
+    ["Concurrency Primitives, From the Ground Up", "ch04", "pending"],
+  ]},
+  { part: "Part II — Design Principles", chapters: [
+    ["Coupling, Cohesion, and the SOLID Lie", "ch05", "pending"],
+    ["Creational Patterns in C++ and Rust", "ch06", "pending"],
+    ["Structural Patterns in C++ and Rust", "ch07", "pending"],
+    ["Behavioral Patterns in C++ and Rust", "ch08", "pending"],
+    ["Layered, Hexagonal, and Clean Architecture", "ch09", "pending"],
+  ]},
+  { part: "Part III — Distributed Systems Fundamentals", chapters: [
+    ["CAP Theorem and Consistency Models", "ch10", "pending"],
+    ["Consensus: Paxos and Raft from First Principles", "ch11", "pending"],
+    ["Replication and Partitioning Strategies", "ch12", "pending"],
+    ["Event-Driven and Messaging Architectures", "ch13", "pending"],
+  ]},
+  { part: "Part IV — Building Blocks", chapters: [
+    ["Load Balancing: Algorithms and Failure Modes", "ch14", "pending"],
+    ["Caching: Policies, Invalidation, Coherence", "ch15", "pending"],
+    ["Databases: SQL, NoSQL, and Why the Trade-offs Exist", "ch16", "pending"],
+    ["Queues and Streaming Systems", "ch17", "pending"],
+    ["API Design: REST, gRPC, and Schema Evolution", "ch18", "pending"],
+  ]},
+  { part: "Part V — Case Studies", chapters: [
+    ["Designing a URL Shortener", "ch19", "pending"],
+    ["Designing a Rate Limiter", "ch20", "pending"],
+    ["Designing a Chat System", "ch21", "pending"],
+    ["Designing a News Feed", "ch22", "pending"],
+    ["Designing Distributed File Storage", "ch23", "pending"],
+  ]},
+  { part: "Part VI — Advanced Topics", chapters: [
+    ["Microservices vs. Monoliths: An Honest Comparison", "ch24", "pending"],
+    ["Service Mesh and Inter-Service Communication", "ch25", "pending"],
+    ["Observability: Logs, Metrics, Traces", "ch26", "pending"],
+    ["Security Architecture", "ch27", "pending"],
+    ["Performance Engineering and Profiling", "ch28", "pending"],
+  ]},
+  { part: "Part VII — Systems Programming Capstones", chapters: [
+    ["C++ for Systems: RAII, Move Semantics, Pitfalls", "ch29", "pending"],
+    ["Rust for Systems: Ownership, Async, Unsafe", "ch30", "pending"],
+    ["Capstone: A Toy Distributed KV Store", "ch31", "pending"],
+  ]},
+];
+
+const navEl = document.getElementById('nav');
+TOC.forEach(part => {
+  const ph = document.createElement('div');
+  ph.className = 'part-header';
+  ph.textContent = part.part;
+  navEl.appendChild(ph);
+  part.chapters.forEach((c, i) => {
+    const [title, id, status] = c;
+    const row = document.createElement('div');
+    row.className = 'chapter' + (id === 'ch01' ? ' active' : '');
+    row.dataset.id = id;
+    row.innerHTML = `<span class="num">${id.replace('ch','')}</span><span>${title}</span><span class="status ${status}">${status === 'done' ? '●' : '○'}</span>`;
+    row.addEventListener('click', () => loadChapter(id, title, part.part));
+    navEl.appendChild(row);
+  });
+});
+
+function setActive(id){
+  document.querySelectorAll('.chapter').forEach(el => {
+    el.classList.toggle('active', el.dataset.id === id);
+  });
+}
+
+function loadChapter(id, title, partName){
+  setActive(id);
+  document.getElementById('crumb').innerHTML =
+    partName.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'') + ' / ' + id + '_' +
+    title.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'') + '.md<span class="cursor"></span>';
+
+  if(id === 'ch01'){
+    document.getElementById('content').innerHTML = CH01;
+  } else {
+    document.getElementById('content').innerHTML = `
+      <div class="chapter-eyebrow"><span class="b">${partName}</span> / Chapter ${id.replace('ch','')}</div>
+      <h2 class="title">${title}</h2>
+      <div class="deck">Not drafted yet.</div>
+      <div class="pending-block">
+        <div class="glyph">[ status: queued ]</div>
+        <p>This chapter follows the same structure as Chapter 1 — theory, trade-offs, then full C++ and Rust reference implementations. It hasn't been written yet. Tell Claude which chapter to write next and it'll be added here, in this same format.</p>
+      </div>`;
+  }
+  document.getElementById('main').scrollTop = 0;
+}
+
+const CH01 = `
+<div class="chapter-eyebrow"><span class="b">Part I — Foundations</span> / Chapter 1</div>
+<h2 class="title">What System Design Actually Is (and Isn't)</h2>
+<div class="deck">Before any diagram, any database choice, any pattern — the reason most resources confuse you is that they never separate three different questions that get asked in the same breath.</div>
+
+<h3>1.1 — Three questions, one word</h3>
+<p>When people say "system design," they're usually collapsing three distinct levels of decision-making into one term. This collapse is the single biggest source of confusion in everything you've read so far — a blog post answers one level while you're trying to learn another, and the mismatch feels like the topic itself is incoherent.</p>
+
+<table>
+<tr><th>Level</th><th>Question it answers</th><th>Typical artifact</th></tr>
+<tr><td><strong>System Design</strong></td><td>How do independent processes, machines, and services cooperate to satisfy a requirement at scale?</td><td>Boxes-and-arrows diagram, capacity plan</td></tr>
+<tr><td><strong>Software Architecture</strong></td><td>How is a single codebase organized so that change in one part doesn't force change everywhere?</td><td>Module/layer boundaries, dependency rules</td></tr>
+<tr><td><strong>Low-Level / Detailed Design</strong></td><td>How is one component built — what data structures, what concurrency model, what allocation strategy?</td><td>Class/struct definitions, function signatures</td></tr>
+</table>
+
+<p>A "design a chat system" interview question is mostly Level 1 with a sprinkle of Level 3. A "refactor this service so the payment logic doesn't leak into the HTTP handlers" task is pure Level 2. A "why is this hot loop allocating" question is pure Level 3. <strong>Most courses teach Level 1 with hand-waving at Level 3, and most "clean code" books teach Level 2 with no Level 1 context at all.</strong> Neither tells you that they're different rooms in the same house.</p>
+
+<div class="callout"><span class="lbl">Why this matters to you specifically</span>You already have strong Level 3 instincts from C++ — manual memory, explicit typing, low-level reasoning. What you're missing isn't aptitude, it's that nobody drew the boundary between "this is a distributed-systems problem" and "this is a single-process design problem" before throwing terminology at you. This book keeps that boundary explicit in every chapter heading.</div>
+
+<h3>1.2 — A working definition</h3>
+<p>For the rest of this book, the terms mean exactly this, with no exceptions:</p>
+<ul>
+<li><strong>System design</strong> — decisions that exist because more than one machine, process, or failure domain is involved. If you could delete the network and the problem disappears, it isn't system design.</li>
+<li><strong>Software architecture</strong> — decisions about dependency direction inside a codebase. Architecture is, almost entirely, about which modules are allowed to know about which other modules.</li>
+<li><strong>Low-level design</strong> — decisions about concrete representation: which struct, which trait/interface, which allocation strategy, which lock.</li>
+</ul>
+<p>Every chapter from here on tells you, in its eyebrow line, which of these three rooms you're in. Chapters in Part III–V are system design. Chapters in Part II are architecture. Chapters in Part VII are low-level design. Case studies in Part V deliberately walk all three levels for one problem, in order, so you can see how a single requirement decomposes downward.</p>
+
+<h3>1.3 — Why "theory-only" resources fail</h3>
+<p>A talk that says "use a message queue for decoupling" is correct and useless in the same sentence. It's correct because queues genuinely decouple producer and consumer lifecycles. It's useless because it never shows you the moment where that decoupling has a cost — a queue is a place where the laws of "this code ran synchronously" go to die, and you start needing idempotency keys, dead-letter handling, and ordering guarantees you didn't have to think about a sentence earlier. Theory without the failure mode is marketing.</p>
+
+<h3>1.4 — Why "code-only" resources fail</h3>
+<p>The opposite failure is a 400-line gist that implements a least-recently-used cache with no explanation of <em>when you'd reach for LRU over LFU or a TTL-based policy</em>, and no discussion of what happens when two threads evict the same key at once. You can copy the code. You can't reuse the decision, because the decision was never written down — only its output.</p>
+<p>This is why this book's format is fixed, chapter after chapter, even when it gets repetitive: <strong>theory and trade-off first, in prose, then the same idea built twice — once in C++, once in Rust</strong> — so you see what each language's type system forces you to confront that the other lets you defer.</p>
+
+<h3>1.5 — Worked example: the same problem at all three levels</h3>
+<p>Take one requirement: <em>"the application needs to log structured events."</em> Watch it change shape at each level.</p>
+
+<h4>At system-design level</h4>
+<p>Where do logs go when the producing process dies mid-write? Do you accept at-most-once delivery (logs can be lost) or do you pay for at-least-once (logs can duplicate, and downstream consumers must dedupe)? If ten thousand instances log concurrently, is the log sink itself now a bottleneck, and does that make logging a candidate for its own queue?</p>
+
+<h4>At architecture level</h4>
+<p>Does your business logic call a concrete <code class="inline">FileLogger</code> directly, or does it depend on an abstraction it doesn't control the implementation of? If you swap file logging for network logging next quarter, how many files change? The answer to that question <em>is</em> your architecture — not a diagram you drew, but the actual blast radius of a change.</p>
+
+<h4>At low-level design level</h4>
+<p>Is the logger thread-safe? Does formatting happen on the hot path (slow, simple) or on a background thread via a lock-free queue (fast, complex)? What's the allocation strategy for the message buffer — does every log call allocate, or is there a reusable arena?</p>
+
+<p>The rest of this section builds the architecture-and-low-level slice of this exact example in both languages: a logging abstraction that the rest of an application depends on, decoupled from where the log line ends up.</p>
+
+<h3>1.6 — C++ reference implementation</h3>
+<p>The shape of the problem in C++: an abstract base class defines the contract, concrete classes implement it, and the rest of the application holds a reference to the interface, never the concrete type. This is the classic dependency-inversion shape, and C++ requires you to make the ownership question explicit — who deletes the logger?</p>
+
+<div class="codewin">
+<div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="fname">logger.hpp</span></div>
+<pre><code><span class="kw">#pragma once</span>
+<span class="kw">#include</span> <span class="st">&lt;string&gt;</span>
+<span class="kw">#include</span> <span class="st">&lt;memory&gt;</span>
+<span class="kw">#include</span> <span class="st">&lt;mutex&gt;</span>
+<span class="kw">#include</span> <span class="st">&lt;fstream&gt;</span>
+<span class="kw">#include</span> <span class="st">&lt;iostream&gt;</span>
+
+<span class="cm">// The contract. Business code depends on this, never on a concrete writer.</span>
+<span class="kw">class</span> <span class="ty">ILogger</span> {
+<span class="kw">public</span>:
+    <span class="kw">virtual</span> ~<span class="fn">ILogger</span>() = <span class="kw">default</span>;
+    <span class="kw">virtual</span> <span class="kw">void</span> <span class="fn">log</span>(<span class="ty">std::string_view</span> level,
+                     <span class="ty">std::string_view</span> message) = <span class="nu">0</span>;
+};
+
+<span class="cm">// One concrete implementation: thread-safe file sink.</span>
+<span class="kw">class</span> <span class="ty">FileLogger</span> : <span class="kw">public</span> <span class="ty">ILogger</span> {
+<span class="kw">public</span>:
+    <span class="kw">explicit</span> <span class="fn">FileLogger</span>(<span class="ty">const std::string&amp;</span> path)
+        : file_(path, <span class="ty">std::ios::app</span>) {}
+
+    <span class="kw">void</span> <span class="fn">log</span>(<span class="ty">std::string_view</span> level,
+             <span class="ty">std::string_view</span> message) <span class="kw">override</span> {
+        <span class="cm">// Lock scope is intentionally minimal: format outside, write inside.</span>
+        <span class="ty">std::lock_guard</span>&lt;<span class="ty">std::mutex</span>&gt; <span class="fn">guard</span>(mutex_);
+        file_ &lt;&lt; <span class="st">"["</span> &lt;&lt; level &lt;&lt; <span class="st">"] "</span> &lt;&lt; message &lt;&lt; <span class="st">"\n"</span>;
+    }
+
+<span class="kw">private</span>:
+    <span class="ty">std::ofstream</span> file_;
+    <span class="ty">std::mutex</span> mutex_;
+};
+
+<span class="cm">// A second implementation costs nothing to add and breaks nothing upstream.</span>
+<span class="kw">class</span> <span class="ty">ConsoleLogger</span> : <span class="kw">public</span> <span class="ty">ILogger</span> {
+<span class="kw">public</span>:
+    <span class="kw">void</span> <span class="fn">log</span>(<span class="ty">std::string_view</span> level,
+             <span class="ty">std::string_view</span> message) <span class="kw">override</span> {
+        <span class="ty">std::lock_guard</span>&lt;<span class="ty">std::mutex</span>&gt; <span class="fn">guard</span>(mutex_);
+        <span class="ty">std::cerr</span> &lt;&lt; <span class="st">"["</span> &lt;&lt; level &lt;&lt; <span class="st">"] "</span> &lt;&lt; message &lt;&lt; <span class="st">"\n"</span>;
+    }
+<span class="kw">private</span>:
+    <span class="ty">std::mutex</span> mutex_;
+};
+</code></pre>
+</div>
+
+<div class="codewin">
+<div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="fname">order_service.hpp</span></div>
+<pre><code><span class="kw">#pragma once</span>
+<span class="kw">#include</span> <span class="st">"logger.hpp"</span>
+
+<span class="cm">// OrderService depends on ILogger&amp; — not FileLogger, not ConsoleLogger.</span>
+<span class="cm">// It does not own the logger's lifetime; the caller decides that.</span>
+<span class="kw">class</span> <span class="ty">OrderService</span> {
+<span class="kw">public</span>:
+    <span class="kw">explicit</span> <span class="fn">OrderService</span>(<span class="ty">ILogger&amp;</span> logger) : logger_(logger) {}
+
+    <span class="kw">void</span> <span class="fn">place_order</span>(<span class="ty">int</span> order_id) {
+        logger_.<span class="fn">log</span>(<span class="st">"info"</span>, <span class="st">"order placed: #"</span> + <span class="ty">std::to_string</span>(order_id));
+    }
+
+<span class="kw">private</span>:
+    <span class="ty">ILogger&amp;</span> logger_;
+};
+
+<span class="cm">// main.cpp wires concrete types at the one place that's allowed to know them:
+// FileLogger logger("app.log");
+// OrderService svc(logger);
+// svc.place_order(42);</span>
+</code></pre>
+</div>
+
+<p>Notice what C++ <em>forces</em> you to decide that a higher-level description never mentions: is <code class="inline">logger_</code> a reference, a raw pointer, or a <code class="inline">shared_ptr</code>? Each answer encodes a different ownership story, and the compiler will not save you from getting it wrong — a dangling reference to a destructed logger is a silent corruption, not a compile error. This is the cost side of the decoupling theory promised you in §1.3.</p>
+
+<h3>1.7 — Rust reference implementation</h3>
+<p>The same shape in Rust: a trait replaces the abstract base class. The interesting difference isn't syntax — it's that Rust's borrow checker makes you resolve the ownership question from §1.6 <em>before the code compiles</em>, rather than leaving it as a runtime risk.</p>
+
+<div class="codewin">
+<div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="fname">logger.rs</span></div>
+<pre><code><span class="kw">use</span> std::fs::OpenOptions;
+<span class="kw">use</span> std::io::Write;
+<span class="kw">use</span> std::sync::Mutex;
+
+<span class="cm">// The contract. Note: no lifetime/ownership escape hatch here —
+// every implementor must decide its own thread-safety story.</span>
+<span class="kw">pub trait</span> <span class="ty">Logger</span>: <span class="ty">Send</span> + <span class="ty">Sync</span> {
+    <span class="kw">fn</span> <span class="fn">log</span>(&amp;<span class="kw">self</span>, level: &amp;<span class="kw">str</span>, message: &amp;<span class="kw">str</span>);
+}
+
+<span class="kw">pub struct</span> <span class="ty">FileLogger</span> {
+    file: <span class="ty">Mutex</span>&lt;std::fs::File&gt;,
+}
+
+<span class="kw">impl</span> <span class="ty">FileLogger</span> {
+    <span class="kw">pub fn</span> <span class="fn">new</span>(path: &amp;<span class="kw">str</span>) -&gt; std::io::Result&lt;<span class="ty">Self</span>&gt; {
+        <span class="kw">let</span> file = <span class="ty">OpenOptions</span>::new().append(<span class="kw">true</span>).create(<span class="kw">true</span>).open(path)?;
+        <span class="ty">Ok</span>(<span class="ty">Self</span> { file: <span class="ty">Mutex</span>::new(file) })
+    }
+}
+
+<span class="kw">impl</span> <span class="ty">Logger</span> <span class="kw">for</span> <span class="ty">FileLogger</span> {
+    <span class="kw">fn</span> <span class="fn">log</span>(&amp;<span class="kw">self</span>, level: &amp;<span class="kw">str</span>, message: &amp;<span class="kw">str</span>) {
+        <span class="cm">// .unwrap() here is a deliberate choice: a poisoned mutex means a
+        // prior writer panicked mid-write — we treat that as unrecoverable
+        // for this sink rather than silently swallowing it.</span>
+        <span class="kw">let mut</span> f = <span class="kw">self</span>.file.lock().unwrap();
+        <span class="kw">let</span> _ = writeln!(f, <span class="st">"[{}] {}"</span>, level, message);
+    }
+}
+
+<span class="kw">pub struct</span> <span class="ty">ConsoleLogger</span>;
+
+<span class="kw">impl</span> <span class="ty">Logger</span> <span class="kw">for</span> <span class="ty">ConsoleLogger</span> {
+    <span class="kw">fn</span> <span class="fn">log</span>(&amp;<span class="kw">self</span>, level: &amp;<span class="kw">str</span>, message: &amp;<span class="kw">str</span>) {
+        eprintln!(<span class="st">"[{}] {}"</span>, level, message);
+    }
+}
+</code></pre>
+</div>
+
+<div class="codewin">
+<div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="fname">order_service.rs</span></div>
+<pre><code><span class="kw">use</span> std::sync::Arc;
+<span class="kw">use</span> <span class="kw">crate</span>::logger::Logger;
+
+<span class="cm">// OrderService owns a shared, reference-counted handle to *some* Logger.
+// Arc<dyn Logger> is the Rust answer to the ownership question C++ left
+// open in section 1.6 — it's explicit in the type, not a convention.</span>
+<span class="kw">pub struct</span> <span class="ty">OrderService</span> {
+    logger: <span class="ty">Arc</span>&lt;<span class="kw">dyn</span> <span class="ty">Logger</span>&gt;,
+}
+
+<span class="kw">impl</span> <span class="ty">OrderService</span> {
+    <span class="kw">pub fn</span> <span class="fn">new</span>(logger: <span class="ty">Arc</span>&lt;<span class="kw">dyn</span> <span class="ty">Logger</span>&gt;) -&gt; <span class="ty">Self</span> {
+        <span class="ty">Self</span> { logger }
+    }
+
+    <span class="kw">pub fn</span> <span class="fn">place_order</span>(&amp;<span class="kw">self</span>, order_id: u64) {
+        <span class="kw">self</span>.logger.log(<span class="st">"info"</span>, &amp;<span class="kw">format!</span>(<span class="st">"order placed: #{}"</span>, order_id));
+    }
+}
+
+<span class="cm">// fn main() {
+//     let logger: Arc<dyn Logger> = Arc::new(FileLogger::new("app.log").unwrap());
+//     let svc = OrderService::new(logger);
+//     svc.place_order(42);
+// }</span>
+</code></pre>
+</div>
+
+<h3>1.8 — What each language forced you to confront</h3>
+<table>
+<tr><th>Question</th><th>C++ answer</th><th>Rust answer</th></tr>
+<tr><td>Who owns the logger?</td><td>Left to convention — reference, raw pointer, or <code class="inline">shared_ptr</code> are all "valid" C++, and the compiler enforces none of them.</td><td>Forced into the type: <code class="inline">Arc&lt;dyn Logger&gt;</code> states shared ownership explicitly. There's no version of this code where ownership is ambiguous.</td></tr>
+<tr><td>Is it thread-safe?</td><td>You must remember to add a mutex; nothing stops you from forgetting, and the failure is a data race discovered at runtime (if you're lucky).</td><td><code class="inline">Send + Sync</code> bounds on the trait mean a non-thread-safe implementor <em>fails to compile</em> if used across threads.</td></tr>
+<tr><td>What's the cost of the abstraction?</td><td>A vtable indirection per call — small, well-understood, optional via templates/CRTP if you need to remove it.</td><td>Same vtable cost via <code class="inline">dyn Logger</code>; removable via generics (<code class="inline">impl Logger</code>/<code class="inline">&lt;L: Logger&gt;</code>) if monomorphization is worth the binary size.</td></tr>
+</table>
+
+<div class="callout"><span class="lbl">The point of this section</span>Neither language is "better" here — they're making the same architectural decision (depend on an abstraction) and disagreeing about how much of the cost gets pushed onto the compiler versus left as a discipline problem for you. That's the lens this entire book uses: same decision, two languages, see what gets caught at compile time versus what stays a runtime risk.</div>
+
+<h3>1.9 — What to carry forward</h3>
+<ul>
+<li>Before reading any future chapter, identify which of the three rooms (system / architecture / low-level) it's actually in — the eyebrow line tells you, but try to guess first.</li>
+<li>The dependency-inversion shape in §1.6–1.7 (depend on a trait/interface, not a concrete type) is the single most repeated pattern in the rest of this book. Everything from caching layers to consensus modules will reuse this exact shape.</li>
+<li>Hold onto the ownership question from §1.8 — it resurfaces, with much higher stakes, in Chapter 3 (memory models) and Chapter 12 (replication, where "who owns this piece of state" stops being a single-process question).</li>
+</ul>
+
+<div class="chapnav">
+  <div></div>
+  <div class="next"><span>Next</span><a onclick="loadChapter('ch02','Computational Costs That Shape Every Design','Part I — Foundations')">Computational Costs That Shape Every Design →</a></div>
+</div>
+`;
+
+loadChapter('ch01', 'What System Design Actually Is', 'Part I — Foundations');
+</script>
+</body>
+</html>

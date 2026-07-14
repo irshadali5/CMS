@@ -59,6 +59,8 @@ db.exec(`
     slug TEXT UNIQUE NOT NULL,
     description TEXT,
     cover_emoji TEXT DEFAULT '📚',
+    type TEXT DEFAULT 'markdown',   -- NEW: 'markdown' or 'html'
+    file_path TEXT DEFAULT '',      -- NEW: e.g., '/books/my-book.html'
     published INTEGER DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL

@@ -1036,16 +1036,26 @@ async function renderBooks(app) {
             return;
         }
         
-        grid.innerHTML = books.map(book => `
-            <a href="#/book/${book.slug}" class="book-card">
+       // Inside renderBooks(), replace the grid.innerHTML assignment with this:
+    grid.innerHTML = books.map(book => {
+        const isHtml = book.type === 'html';
+        const readAction = isHtml 
+            ? `onclick="openHtmlBook('${book.file_path}', '${escapeHtml(book.title)}'); return false;"` 
+            : `href="#/book/${book.slug}"`;
+    
+        return `
+            <a ${readAction} class="book-card" style="cursor: pointer;">
                 <div class="book-cover">${book.cover_emoji}</div>
                 <div class="book-info">
                     <h3>${escapeHtml(book.title)}</h3>
                     <p>${escapeHtml(book.description)}</p>
-                    <span class="btn btn-sm btn-primary" style="margin-top: 16px;">Read Book →</span>
+                    <span class="btn btn-sm btn-primary" style="margin-top: 16px;">
+                        ${isHtml ? 'Open HTML Book →' : 'Read Book →'}
+                    </span>
                 </div>
             </a>
-        `).join('');
+        `;
+        }).join('');
     } catch (e) {
         console.error(e);
     }
@@ -1259,11 +1269,23 @@ async function loadAdminBooks() {
 window.createNewBook = async () => {
     const title = prompt('Book Title:');
     if(!title) return;
+    
+    const type = prompt('Book Type: (markdown or html)', 'html');
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    await api('/books', { method: 'POST', body: JSON.stringify({ title, slug, description: '', cover_emoji: '📚', published: false }) });
-    showToast('Book created! Now add chapters.', 'success');
+    
+    // If HTML, assume it will be placed in public/books/{slug}.html
+    const file_path = type === 'html' ? `/books/${slug}.html` : '';
+    
+    await api('/books', { 
+        method: 'POST', 
+        body: JSON.stringify({ 
+            title, slug, description: '', cover_emoji: '📚', 
+            type, file_path, published: false 
+        }) 
+    });
+    showToast('Book created!', 'success');
     loadAdminBooks();
-}
+};
 
 window.deleteBook = async (id) => {
     if(!confirm('Delete this book and ALL its chapters?')) return;
@@ -1412,6 +1434,29 @@ window.saveChapter = async (bookId, chapterId) => {
         showToast(e.message, 'error');
     }
 }
+
+// ============================================================
+// HTML BOOK MODAL CONTROLS
+// ============================================================
+window.openHtmlBook = (url, title) => {
+    const modal = document.getElementById('book-iframe-modal');
+    const iframe = document.getElementById('book-iframe');
+    const titleEl = document.getElementById('book-modal-title');
+    
+    titleEl.textContent = title;
+    iframe.src = url;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+};
+
+window.closeHtmlBook = () => {
+    const modal = document.getElementById('book-iframe-modal');
+    const iframe = document.getElementById('book-iframe');
+    
+    modal.classList.remove('active');
+    iframe.src = ''; // Stop loading/playing media
+    document.body.style.overflow = '';
+};
 
 document.addEventListener('DOMContentLoaded', initTerminalUptime);
 

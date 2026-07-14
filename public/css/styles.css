@@ -947,3 +947,40 @@ code, pre { font-family: var(--font-mono); }
 .admin-actions { margin-bottom: 24px; display: flex; justify-content: flex-end; }
 .btn-danger { background: #ef4444 !important; color: white !important; border: none !important; }
 .btn-danger:hover { background: #dc2626 !important; transform: translateY(-1px); }
+
+/* ============================================
+   HTML BOOK IFRAME MODAL
+   ============================================ */
+.book-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #000;
+    display: none;
+    flex-direction: column;
+}
+.book-modal.active { display: flex; }
+.book-modal-header {
+    height: 50px;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.modal-title-text {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.book-modal iframe {
+    flex: 1;
+    width: 100%;
+    border: none;
+    background: #fff; /* Default white background for books */
+}

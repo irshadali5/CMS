@@ -47,6 +47,7 @@ app.use("/favicon.ico", serveStatic({ path: "./public/favicon.ico" }));
 app.use("/css/*", serveStatic({ root: "./public" }));
 app.use("/js/*", serveStatic({ root: "./public" }));
 app.use("/assets/*", serveStatic({ root: "./public" }));
+app.use("/books/*", serveStatic({ root: "./public" }));
 
 // --- SPA Fallback ---
 app.get("*", async (c) => {

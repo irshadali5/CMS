@@ -46,11 +46,11 @@ app.get("/admin/:id", authMiddleware, (c) => {
 
 // CREATE BOOK
 app.post("/", authMiddleware, async (c) => {
-  const { title, slug, description, cover_emoji, published } = await c.req.json();
+  const { title, slug, description, cover_emoji, type, file_path, published } = await c.req.json();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
-  db.query("INSERT INTO books (id, title, slug, description, cover_emoji, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
-    .run(id, title, slug, description || "", cover_emoji || "📚", published ? 1 : 0, now, now);
+  db.query("INSERT INTO books (id, title, slug, description, cover_emoji, type, file_path, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    .run(id, title, slug, description || "", cover_emoji || "📚", type || 'markdown', file_path || '', published ? 1 : 0, now, now);
   return c.json({ id, message: "Book created" }, 201);
 });
 
