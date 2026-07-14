@@ -99,6 +99,7 @@ async function router() {
     else if (route === '/admin/login') renderLogin(app);
     else if (route === '/admin/article/new') renderArticleEditor(app);
     else if (route.startsWith('/admin/article/edit/')) renderArticleEditor(app, route.split('/admin/article/edit/')[1]);
+    else if (route === '/admin/book/new') renderBookEditor(app);
     else if (route.match(/^\/admin\/book\/[^\/]+$/)) renderBookManager(app, route.split('/admin/book/')[1]);
     else if (route.match(/^\/admin\/book\/([^\/]+)\/chapter\/([^\/]+)/)) {
         const match = route.match(/^\/admin\/book\/([^\/]+)\/chapter\/([^\/]+)/);
@@ -1245,7 +1246,7 @@ async function loadAdminBooks() {
         const { books } = await api('/books'); 
         area.innerHTML = `
             <div class="admin-actions">
-                <button class="btn btn-primary btn-sm" onclick="createNewBook()">+ New Book</button>
+                <a href="#/admin/book/new" class="btn btn-primary btn-sm">+ New Book</a>
             </div>
             <table class="admin-table">
                 <thead><tr><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
@@ -1266,26 +1267,88 @@ async function loadAdminBooks() {
     } catch(e) { area.innerHTML = '<p>Failed to load books.</p>'; }
 }
 
-window.createNewBook = async () => {
-    const title = prompt('Book Title:');
-    if(!title) return;
-    
-    const type = prompt('Book Type: (markdown or html)', 'html');
-    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    
-    // If HTML, assume it will be placed in public/books/{slug}.html
-    const file_path = type === 'html' ? `/books/${slug}.html` : '';
-    
-    await api('/books', { 
-        method: 'POST', 
-        body: JSON.stringify({ 
-            title, slug, description: '', cover_emoji: '📚', 
-            type, file_path, published: false 
-        }) 
-    });
-    showToast('Book created!', 'success');
-    loadAdminBooks();
+window.saveBook = async function(publish) {
+    const title = document.getElementById('bookTitle').value;
+    const slug = document.getElementById('bookSlug').value;
+    const description = document.getElementById('bookDescription').value;
+    const cover_emoji = document.getElementById('bookEmoji').value;
+    const type = document.getElementById('bookType').value;
+    const file_path = document.getElementById('bookFilePath').value;
+
+    if (!title || !slug) {
+        showToast('Title and slug are required', 'error');
+        return;
+    }
+
+    try {
+        await api('/books', {
+            method: 'POST',
+            body: JSON.stringify({
+                title, slug, description, cover_emoji,
+                type, file_path, published: publish
+            })
+        });
+        showToast('Book created!', 'success');
+        navigate('/admin');
+    } catch(e) {
+        showToast('Failed to save book', 'error');
+    }
 };
+
+function renderBookEditor(app) {
+    if (!state.token) { navigate('/admin/login'); return; }
+
+    app.innerHTML = `
+        <div class="admin-panel container page-enter">
+            <div class="admin-header">
+                <h2 class="section-title">New Book</h2>
+                <a href="#/admin" class="btn btn-secondary btn-sm">← Back to Dashboard</a>
+            </div>
+            <form id="bookForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Title *</label>
+                        <input type="text" class="form-input" id="bookTitle" required placeholder="Book title">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Slug *</label>
+                        <input type="text" class="form-input" id="bookSlug" required placeholder="url-friendly-slug">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <input type="text" class="form-input" id="bookDescription" placeholder="Brief summary">
+                </div>
+                <div style="display: grid; grid-template-columns: 100px 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Emoji</label>
+                        <input type="text" class="form-input" id="bookEmoji" value="📚">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Type</label>
+                        <select class="form-input" id="bookType">
+                            <option value="html">HTML (Custom File)</option>
+                            <option value="markdown">Markdown (MDX)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">File Path (if HTML/MDX)</label>
+                        <input type="text" class="form-input" id="bookFilePath" placeholder="/books/my-book.html">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+                    <button type="button" class="btn btn-secondary" onclick="saveBook(false)">Save as Draft</button>
+                    <button type="button" class="btn btn-primary" onclick="saveBook(true)">Publish</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.getElementById('bookTitle')?.addEventListener('input', (e) => {
+        const slug = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        document.getElementById('bookSlug').value = slug;
+    });
+}
 
 window.deleteBook = async (id) => {
     if(!confirm('Delete this book and ALL its chapters?')) return;
