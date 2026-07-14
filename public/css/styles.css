@@ -70,6 +70,7 @@ button { cursor: pointer; font-family: inherit; }
 code, pre { font-family: var(--font-mono); }
 
 .container { max-width: var(--max-width); margin: 0 auto; padding: 0 24px; }
+.hero-container { max-width: 1600px; margin: 0 auto; padding: 0 24px; }
 .section { padding: 100px 0; }
 .section-label {
     display: inline-flex; align-items: center; gap: 8px;

@@ -49,36 +49,47 @@ export function migrate() {
       password_hash TEXT NOT NULL,
       created_at TEXT NOT NULL
     );
-  `);
-  
-  // Add inside migrate() function, after CREATE TABLE admin_users
-db.exec(`
-  CREATE TABLE IF NOT EXISTS books (
-    id TEXT PRIMARY KEY,
-    title TEXT NOT NULL,
-    slug TEXT UNIQUE NOT NULL,
-    description TEXT,
-    cover_emoji TEXT DEFAULT '📚',
-    type TEXT DEFAULT 'markdown',   -- NEW: 'markdown' or 'html'
-    file_path TEXT DEFAULT '',      -- NEW: e.g., '/books/my-book.html'
-    published INTEGER DEFAULT 0,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-  );
 
-  CREATE TABLE IF NOT EXISTS book_chapters (
-    id TEXT PRIMARY KEY,
-    book_id TEXT NOT NULL,
-    chapter_index INTEGER NOT NULL,
-    title TEXT NOT NULL,
-    slug TEXT NOT NULL,
-    content TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE
-  );
-  CREATE UNIQUE INDEX IF NOT EXISTS idx_book_chapter_slug ON book_chapters(book_id, slug);
-`);
+    CREATE TABLE IF NOT EXISTS books (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      slug TEXT UNIQUE NOT NULL,
+      description TEXT,
+      cover_emoji TEXT DEFAULT '📚',
+      type TEXT DEFAULT 'html',
+      file_path TEXT,
+      published INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS chapters (
+      id TEXT PRIMARY KEY,
+      book_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      slug TEXT NOT NULL,
+      content TEXT NOT NULL,
+      order_index INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
+      UNIQUE (book_id, slug)
+    );
+
+    CREATE TABLE IF NOT EXISTS portfolio_projects (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      category TEXT NOT NULL,
+      description TEXT NOT NULL,
+      slug TEXT UNIQUE NOT NULL,
+      tags TEXT DEFAULT '[]',
+      demo_url TEXT,
+      github_url TEXT,
+      cover_emoji TEXT DEFAULT '🛠️',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+  `);
 
 // At the bottom of migrate(), add the book seeder
 const bookCount = db.query("SELECT COUNT(*) as c FROM books").get() as any;
@@ -102,6 +113,32 @@ if (bookCount.c === 0) seedSampleBooks();
   // Seed sample articles if table is empty
   const artCount = db.query("SELECT COUNT(*) as c FROM articles").get() as any;
   if (artCount.c === 0) seedSampleArticles();
+
+  // Seed portfolio projects if table is empty
+  const portCount = db.query("SELECT COUNT(*) as c FROM portfolio_projects").get() as any;
+  if (portCount.c === 0) seedSamplePortfolio();
+}
+
+function seedSamplePortfolio() {
+  const projects = [
+    { id: crypto.randomUUID(), title: "Lock-Free Queue (Rust)", category: "systems", description: "Michael-Scott queue achieving 28M ops/sec on 16 threads. No unsafe blocks in public API. Full benchmarks included.", slug: "lock-free-queue", tags: JSON.stringify(['Rust', 'Atomics', 'Arc']), demo_url: "#", github_url: "", cover_emoji: "🦀", created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    { id: crypto.randomUUID(), title: "Custom Slab Allocator", category: "systems", description: "C++ memory allocator 4x faster than glibc for HFT workloads. Template-based, zero-overhead.", slug: "slab-allocator", tags: JSON.stringify(['C++20', 'Templates', 'SIMD']), demo_url: "#", github_url: "", cover_emoji: "⚙️", created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    { id: crypto.randomUUID(), title: "AI Document Extractor", category: "ai", description: "Production pipeline processing 10K+ docs/day with 94% accuracy using schema-first prompting.", slug: "ai-doc-extractor", tags: JSON.stringify(['Python', 'OpenAI', 'PostgreSQL']), demo_url: "#", github_url: "", cover_emoji: "🤖", created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    { id: crypto.randomUUID(), title: "Query Optimizer Engine", category: "data", description: "Tool that analyzes PostgreSQL EXPLAIN output and suggests indexes. Reduced a 30s query to 3ms.", slug: "query-optimizer", tags: JSON.stringify(['SQL', 'PostgreSQL', 'Python']), demo_url: "#", github_url: "", cover_emoji: "🗄️", created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    { id: crypto.randomUUID(), title: "Systemd Service Manager", category: "linux", description: "CLI tool for generating, validating, and deploying systemd unit files across clusters.", slug: "systemd-manager", tags: JSON.stringify(['Go', 'Systemd', 'Linux']), demo_url: "#", github_url: "", cover_emoji: "🐧", created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+    { id: crypto.randomUUID(), title: "RAG Pipeline for Docs", category: "ai", description: "Retrieval-Augmented Generation system for internal docs. 85% answer accuracy with citation tracking.", slug: "rag-pipeline", tags: JSON.stringify(['LangChain', 'OpenAI', 'Pinecone']), demo_url: "#", github_url: "", cover_emoji: "📊", created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  ];
+  
+  const insert = db.prepare(
+    "INSERT INTO portfolio_projects (id, title, category, description, slug, tags, demo_url, github_url, cover_emoji, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  );
+  const transaction = db.transaction(() => {
+    for (const p of projects) {
+      insert.run(p.id, p.title, p.category, p.description, p.slug, p.tags, p.demo_url, p.github_url, p.cover_emoji, p.created_at, p.updated_at);
+    }
+  });
+  transaction();
+  console.log("✓ Seeded sample portfolio projects");
 }
 
 function seedSampleArticles() {

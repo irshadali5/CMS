@@ -100,6 +100,7 @@ async function router() {
     else if (route === '/admin/article/new') renderArticleEditor(app);
     else if (route.startsWith('/admin/article/edit/')) renderArticleEditor(app, route.split('/admin/article/edit/')[1]);
     else if (route === '/admin/book/new') renderBookEditor(app);
+    else if (route === '/admin/portfolio/new') renderPortfolioEditor(app);
     else if (route.match(/^\/admin\/book\/[^\/]+$/)) renderBookManager(app, route.split('/admin/book/')[1]);
     else if (route.match(/^\/admin\/book\/([^\/]+)\/chapter\/([^\/]+)/)) {
         const match = route.match(/^\/admin\/book\/([^\/]+)\/chapter\/([^\/]+)/);
@@ -183,7 +184,7 @@ function renderHome(app) {
             <div class="hero-orb hero-orb-1"></div>
             <div class="hero-orb hero-orb-2"></div>
             <div class="hero-orb hero-orb-3"></div>
-            <div class="container">
+            <div class="hero-container">
                 <div class="hero-content">
                     <div class="hero-badge">
                         <span class="pulse"></span>
@@ -305,7 +306,7 @@ async function loadHomeArticles() {
 // ============================================================
 // PAGE: PORTFOLIO (For Interviewers)
 // ============================================================
-function renderPortfolio(app) {
+async function renderPortfolio(app) {
     app.innerHTML = `
         <section class="section" style="padding-top: calc(var(--nav-height) + 60px);">
             <div class="container">
@@ -324,51 +325,33 @@ function renderPortfolio(app) {
                 </div>
 
                 <div class="projects-grid reveal" id="portfolioGrid">
-                    ${renderProjectCard('🦀', 'Lock-Free Queue (Rust)', 'Systems', 'Michael-Scott queue achieving 28M ops/sec on 16 threads. No unsafe blocks in public API. Full benchmarks included.', ['Rust', 'Atomics', 'Arc'], '#', 'systems')}
-                    ${renderProjectCard('⚙️', 'Custom Slab Allocator', 'Systems', 'C++ memory allocator 4x faster than glibc for HFT workloads. Template-based, zero-overhead.', ['C++20', 'Templates', 'SIMD'], '#', 'systems')}
-                    ${renderProjectCard('🤖', 'AI Document Extractor', 'AI/Prompt', 'Production pipeline processing 10K+ docs/day with 94% accuracy using schema-first prompting.', ['Python', 'OpenAI', 'PostgreSQL'], '#', 'ai')}
-                    ${renderProjectCard('🗄️', 'Query Optimizer Engine', 'Data & SQL', 'Tool that analyzes PostgreSQL EXPLAIN output and suggests indexes. Reduced a 30s query to 3ms.', ['SQL', 'PostgreSQL', 'Python'], '#', 'data')}
-                    ${renderProjectCard('🐧', 'Systemd Service Manager', 'Linux/DevOps', 'CLI tool for generating, validating, and deploying systemd unit files across clusters.', ['Go', 'Systemd', 'Linux'], '#', 'linux')}
-                    ${renderProjectCard('📊', 'RAG Pipeline for Docs', 'AI/Prompt', 'Retrieval-Augmented Generation system for internal docs. 85% answer accuracy with citation tracking.', ['LangChain', 'OpenAI', 'Pinecone'], '#', 'ai')}
-                </div>
-
-                <div style="margin-top: 100px;">
-                    <div class="reveal">
-                        <span class="section-label">Experience</span>
-                        <h2 class="section-title">Career Journey</h2>
-                    </div>
-                    <div class="timeline reveal">
-                        ${renderTimelineItem('2024 — Present', 'Senior Systems Developer', 'TechCorp', [
-                            'Led migration of C++ monolith to modular Rust services, reducing memory usage by 62%',
-                            'Built custom allocator saving $40K/year in cloud compute costs',
-                            'Designed AI-powered log analysis pipeline processing 2TB/day'
-                        ])}
-                        ${renderTimelineItem('2022 — 2024', 'AI & Data Engineer', 'DataScale Inc.', [
-                            'Built LLM prompt engineering framework used across 12 production services',
-                            'Optimized PostgreSQL queries achieving 10,000x performance improvement on critical reports',
-                            'Mentored team on structured output prompting, reducing hallucinations by 73%'
-                        ])}
-                        ${renderTimelineItem('2021 — 2022', 'Linux Systems Engineer', 'Infrastructure Co.', [
-                            'Maintained 500+ GNU/Linux servers with 99.99% uptime',
-                            'Automated deployments using systemd, Ansible, and custom tooling',
-                            'Wrote internal bash/Python utilities saving team 20 hours/week'
-                        ])}
-                    </div>
+                    <div class="loading-spinner"><div class="spinner"></div></div>
                 </div>
             </div>
         </section>
     `;
 
-    document.querySelectorAll('.filter-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            const filter = tab.dataset.filter;
-            document.querySelectorAll('.project-card').forEach(card => {
-                card.style.display = (filter === 'all' || card.dataset.category === filter) ? '' : 'none';
+    try {
+        const data = await api('/portfolio');
+        const grid = document.getElementById('portfolioGrid');
+        grid.innerHTML = data.projects.map(p => {
+            const tags = JSON.parse(p.tags || "[]");
+            return renderProjectCard(p.cover_emoji || '🛠️', p.title, p.category, p.description, tags, p.demo_url || '#', p.category);
+        }).join('') || '<p>No projects found.</p>';
+
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const filter = tab.dataset.filter;
+                document.querySelectorAll('.project-card').forEach(card => {
+                    card.style.display = (filter === 'all' || card.dataset.category === filter) ? '' : 'none';
+                });
             });
         });
-    });
+    } catch (e) {
+        document.getElementById('portfolioGrid').innerHTML = '<p>Failed to load projects.</p>';
+    }
 }
 // ============================================================
 // PAGE: ARTICLES (For Viewers)
@@ -1176,6 +1159,7 @@ async function renderAdmin(app) {
             <div class="admin-tabs">
                 <button class="admin-tab active" data-tab="articles">Articles</button>
                 <button class="admin-tab" data-tab="books">Books</button>
+                <button class="admin-tab" data-tab="portfolio">Portfolio</button>
             </div>
 
             <div id="admin-content-area">
@@ -1197,6 +1181,7 @@ async function renderAdmin(app) {
             tab.classList.add('active');
             if (tab.dataset.tab === 'articles') loadAdminArticles();
             if (tab.dataset.tab === 'books') loadAdminBooks();
+            if (tab.dataset.tab === 'portfolio') loadAdminPortfolio();
         };
     });
 
@@ -1355,6 +1340,135 @@ window.deleteBook = async (id) => {
     await api(`/books/${id}`, { method: 'DELETE' });
     showToast('Deleted', 'success');
     loadAdminBooks();
+}
+
+async function loadAdminPortfolio() {
+    const area = document.getElementById('admin-content-area');
+    try {
+        const { projects } = await api('/portfolio'); 
+        area.innerHTML = `
+            <div class="admin-actions">
+                <a href="#/admin/portfolio/new" class="btn btn-primary btn-sm">+ New Project</a>
+            </div>
+            <table class="admin-table">
+                <thead><tr><th>Title</th><th>Category</th><th>Actions</th></tr></thead>
+                <tbody>
+                    ${projects.map(p => `
+                        <tr>
+                            <td>${p.cover_emoji} <strong>${escapeHtml(p.title)}</strong></td>
+                            <td><span class="status-badge published">${escapeHtml(p.category)}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" onclick="deletePortfolio('${p.id}')">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="3" style="text-align:center; padding:20px;">No projects yet.</td></tr>'}
+                </tbody>
+            </table>
+        `;
+    } catch(e) { area.innerHTML = '<p>Failed to load portfolio.</p>'; }
+}
+
+window.deletePortfolio = async (id) => {
+    if(!confirm('Delete this project?')) return;
+    await api(`/portfolio/${id}`, { method: 'DELETE' });
+    showToast('Deleted', 'success');
+    loadAdminPortfolio();
+};
+
+window.savePortfolioProject = async function() {
+    const title = document.getElementById('portTitle').value;
+    const slug = document.getElementById('portSlug').value;
+    const description = document.getElementById('portDescription').value;
+    const category = document.getElementById('portCategory').value;
+    const cover_emoji = document.getElementById('portEmoji').value;
+    const demo_url = document.getElementById('portDemo').value;
+    const github_url = document.getElementById('portGithub').value;
+    const tags = document.getElementById('portTags').value;
+
+    if (!title || !slug) {
+        showToast('Title and slug are required', 'error');
+        return;
+    }
+
+    try {
+        await api('/portfolio', {
+            method: 'POST',
+            body: JSON.stringify({
+                title, slug, description, category, cover_emoji,
+                demo_url, github_url, tags
+            })
+        });
+        showToast('Project created!', 'success');
+        navigate('/admin');
+    } catch(e) {
+        showToast('Failed to save project', 'error');
+    }
+};
+
+function renderPortfolioEditor(app) {
+    if (!state.token) { navigate('/admin/login'); return; }
+
+    app.innerHTML = `
+        <div class="admin-panel container page-enter">
+            <div class="admin-header">
+                <h2 class="section-title">New Portfolio Project</h2>
+                <a href="#/admin" class="btn btn-secondary btn-sm">← Back to Dashboard</a>
+            </div>
+            <form id="portfolioForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Title *</label>
+                        <input type="text" class="form-input" id="portTitle" required placeholder="Project title">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Slug *</label>
+                        <input type="text" class="form-input" id="portSlug" required placeholder="url-friendly-slug">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <input type="text" class="form-input" id="portDescription" placeholder="Brief summary">
+                </div>
+                <div style="display: grid; grid-template-columns: 100px 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Emoji</label>
+                        <input type="text" class="form-input" id="portEmoji" value="🛠️">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Category</label>
+                        <select class="form-input" id="portCategory">
+                            <option value="systems">Systems</option>
+                            <option value="data">Data & SQL</option>
+                            <option value="ai">AI/Prompt</option>
+                            <option value="linux">Linux/DevOps</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tags (JSON Array)</label>
+                        <input type="text" class="form-input" id="portTags" value='["Tag1", "Tag2"]'>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Demo URL</label>
+                        <input type="text" class="form-input" id="portDemo" placeholder="#">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">GitHub URL</label>
+                        <input type="text" class="form-input" id="portGithub" placeholder="#">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+                    <button type="button" class="btn btn-primary" onclick="savePortfolioProject()">Save Project</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.getElementById('portTitle')?.addEventListener('input', (e) => {
+        const slug = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        document.getElementById('portSlug').value = slug;
+    });
 }
 
 // BOOK MANAGER (Chapters List)
