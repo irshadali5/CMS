@@ -12,6 +12,8 @@ import { contactRoutes } from "./routes/contact";
 import { seoRoutes } from "./routes/seo";
 import { bookRoutes } from "./routes/books";
 import { portfolioRoutes } from "./routes/portfolio";
+import { uploadRoutes } from "./routes/uploads";
+import { commentRoutes } from "./routes/comments";
 import { rateLimiter } from "./middleware/rateLimit";
 
 // --- Bootstrap ---
@@ -41,6 +43,8 @@ app.route("/api/contact", contactRoutes);
 app.route("/", seoRoutes);
 app.route("/api/books", bookRoutes);
 app.route("/api/portfolio", portfolioRoutes);
+app.route("/api/upload", uploadRoutes);
+app.route("/api/comments", commentRoutes);
 
 // --- Static Files ---
 app.use("/manifest.json", serveStatic({ path: "./public/manifest.json" }));
@@ -50,6 +54,7 @@ app.use("/css/*", serveStatic({ root: "./public" }));
 app.use("/js/*", serveStatic({ root: "./public" }));
 app.use("/assets/*", serveStatic({ root: "./public" }));
 app.use("/books/*", serveStatic({ root: "./public" }));
+app.use("/uploads/*", serveStatic({ root: "./public" }));
 
 // --- SPA Fallback ---
 app.get("*", async (c) => {

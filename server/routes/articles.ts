@@ -32,15 +32,32 @@ app.get("/", (c) => {
     query += ` AND tags LIKE ?`;
     params.push(`%"${tag}"%`);
   }
+  
+  let countQuery = query.replace("SELECT *", "SELECT COUNT(*) as c");
+
   if (search) {
-    query += ` AND (title LIKE ? OR excerpt LIKE ? OR tags LIKE ?)`;
-    const q = `%${search}%`;
-    params.push(q, q, q);
+    // Escape search query for FTS5 to avoid syntax errors with special chars
+    const ftsQuery = search.replace(/"/g, '""');
+    query = `
+      SELECT articles.* FROM articles 
+      JOIN articles_fts ON articles.rowid = articles_fts.rowid 
+      WHERE articles_fts MATCH ? AND articles.published = 1
+    `;
+    countQuery = `
+      SELECT COUNT(*) as c FROM articles 
+      JOIN articles_fts ON articles.rowid = articles_fts.rowid 
+      WHERE articles_fts MATCH ? AND articles.published = 1
+    `;
+    params.unshift(`"${ftsQuery}"*`); // Match prefix
+    if (tag) {
+      query += ` AND articles.tags LIKE ?`;
+      countQuery += ` AND articles.tags LIKE ?`;
+    }
   }
 
-  const total = (db.query(query.replace("SELECT *", "SELECT COUNT(*) as c")).get(...params) as any).c;
+  const total = (db.query(countQuery).get(...params) as any).c;
 
-  query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+  query += ` ORDER BY articles.created_at DESC LIMIT ? OFFSET ?`;
   params.push(Number(limit), offset);
 
   const articles = db.query(query).all(...params).map((a: any) => ({

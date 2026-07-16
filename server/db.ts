@@ -43,6 +43,38 @@ export function migrate() {
       received_at TEXT NOT NULL
     );
 
+    CREATE VIRTUAL TABLE IF NOT EXISTS articles_fts USING fts5(
+      title, excerpt, content, tags, content='articles', content_rowid='rowid'
+    );
+
+    CREATE TRIGGER IF NOT EXISTS articles_ai AFTER INSERT ON articles BEGIN
+      INSERT INTO articles_fts(rowid, title, excerpt, content, tags) 
+      VALUES (new.rowid, new.title, new.excerpt, new.content, new.tags);
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS articles_ad AFTER DELETE ON articles BEGIN
+      INSERT INTO articles_fts(articles_fts, rowid, title, excerpt, content, tags) 
+      VALUES ('delete', old.rowid, old.title, old.excerpt, old.content, old.tags);
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS articles_au AFTER UPDATE ON articles BEGIN
+      INSERT INTO articles_fts(articles_fts, rowid, title, excerpt, content, tags) 
+      VALUES ('delete', old.rowid, old.title, old.excerpt, old.content, old.tags);
+      INSERT INTO articles_fts(rowid, title, excerpt, content, tags) 
+      VALUES (new.rowid, new.title, new.excerpt, new.content, new.tags);
+    END;
+
+    CREATE TABLE IF NOT EXISTS comments (
+      id TEXT PRIMARY KEY,
+      article_id TEXT NOT NULL,
+      author_name TEXT NOT NULL,
+      content TEXT NOT NULL,
+      status TEXT DEFAULT 'pending',
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE
+    );
+
+
     CREATE TABLE IF NOT EXISTS admin_users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
@@ -117,6 +149,11 @@ if (bookCount.c === 0) seedSampleBooks();
   // Seed portfolio projects if table is empty
   const portCount = db.query("SELECT COUNT(*) as c FROM portfolio_projects").get() as any;
   if (portCount.c === 0) seedSamplePortfolio();
+
+  // Backfill FTS5
+  db.exec(`
+    INSERT INTO articles_fts(articles_fts) VALUES('rebuild');
+  `);
 }
 
 function seedSamplePortfolio() {

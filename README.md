@@ -203,10 +203,9 @@ CMD ["bun", "run", "start"]
 ---
 
 ## 🗺️ Roadmap
-
-- [ ] Add image upload support via `multer` + S3/Cloudinary.
-- [ ] Implement full-text search (FTS5) in SQLite.
-- [ ] Add a commenting system (e.g., Giscus or custom SQLite implementation).
+- [x] Add image upload support via `multer` + S3/Cloudinary.
+- [x] Implement full-text search (FTS5) in SQLite.
+- [x] Add a commenting system (e.g., Giscus or custom SQLite implementation).
 - [ ] Migrate frontend to a lightweight reactive framework (like Preact or Alpine.js) if complexity grows.
 
 ---
